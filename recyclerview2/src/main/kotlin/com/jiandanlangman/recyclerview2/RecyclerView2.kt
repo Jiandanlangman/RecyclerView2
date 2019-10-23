@@ -40,14 +40,11 @@ class RecyclerView2 @JvmOverloads constructor(context: Context, attrs: Attribute
     private var isEnableLoadMore = true
     private var touchEventPrevY = 0f
     private var preloadOffset = PRELOAD_DEFAULT_OFFSET
-    private var emptyView: IEmptyView =
-            DefaultEmptyView(context)
-    private var headerView: IHeaderView =
-            DefaultHeaderView(context)
+    private var emptyView: IEmptyView = DefaultEmptyView(context)
+    private var headerView: IHeaderView = DefaultHeaderView(context)
     private var canRefreshStatus = -1
     private var isWaitingHeaderViewReady = false
-    private var footerView: IFooterView =
-            DefaultFooterView(context)
+    private var footerView: IFooterView = DefaultFooterView(context)
     private var fastScrollToTopCompleteListener: () -> Unit = {}
     private var fastScrolledY = 0
     private var isFastScrolling = false
@@ -87,7 +84,9 @@ class RecyclerView2 @JvmOverloads constructor(context: Context, attrs: Attribute
         val y = ev.y
         when (ev.action) {
             MotionEvent.ACTION_DOWN -> canRefreshStatus = -1
-            MotionEvent.ACTION_MOVE -> if (isTop()) {
+            MotionEvent.ACTION_MOVE -> if (isEmptyExternalAdapter())
+                return true
+            else if (isTop()) {
                 val offset = y - touchEventPrevY
                 if (offset > 0 || headerViewHolder!!.itemView.layoutParams.height > headerView.getViewMinHeight()) {
                     val paramsHeight = headerViewHolder!!.itemView.layoutParams.height
@@ -165,7 +164,7 @@ class RecyclerView2 @JvmOverloads constructor(context: Context, attrs: Attribute
 
     override fun onScrolled(dx: Int, dy: Int) {
         super.onScrolled(dx, dy)
-        if (isEnableLoadMore && dy > 0 && loadStatus != LoadStatus.STATUS_REFRESHING && loadStatus != LoadStatus.STATUS_LOADING_MORE) {
+        if (isEnableLoadMore && dy > 0 && loadStatus != LoadStatus.STATUS_REFRESHING && loadStatus != LoadStatus.STATUS_LOADING_MORE && !isEmptyExternalAdapter()) {
             val lm = layoutManager
             val lastCompletelyVisibleItemPosition = if (lm is LinearLayoutManager) lm.findLastCompletelyVisibleItemPosition() else {
                 (lm as StaggeredGridLayoutManager).findLastCompletelyVisibleItemPositions(staggeredGridLayoutManagerLastVisiblePositions)
@@ -184,6 +183,8 @@ class RecyclerView2 @JvmOverloads constructor(context: Context, attrs: Attribute
         super.onScrollStateChanged(state)
         if (state == SCROLL_STATE_IDLE && isFastScrolling) {
             isFastScrolling = false
+            if (!isTop())
+                scrollToPosition(0)
             fastScrollToTopCompleteListener.invoke()
         }
     }
@@ -278,6 +279,8 @@ class RecyclerView2 @JvmOverloads constructor(context: Context, attrs: Attribute
 
     private fun isBottom() = footerView.getView().parent != null
 
+    private fun isEmptyExternalAdapter() = internalAdapter.itemCount == 2
+
     private fun animateHeaderViewHolderHeight(height: Int) {
         if (headerViewHolder != null) {
             setHeaderViewHolderHeightAnimator?.cancel()
@@ -302,7 +305,7 @@ class RecyclerView2 @JvmOverloads constructor(context: Context, attrs: Attribute
     }
 
     private fun autoLoadMore() {
-        if (isEnableLoadMore && loadStatus == LoadStatus.STATUS_NORMAL && isBottom()) {
+        if (isEnableLoadMore && loadStatus == LoadStatus.STATUS_NORMAL && isBottom() && !isEmptyExternalAdapter()) {
             loadStatus = LoadStatus.STATUS_LOADING_MORE
             notifyLoadStatusChanged()
             internalAdapter.notifyItemChanged(internalAdapter.itemCount - 1, INTERNAL_PAYLOAD)
@@ -385,7 +388,7 @@ class RecyclerView2 @JvmOverloads constructor(context: Context, attrs: Attribute
         }
 
         override fun getItemViewType(position: Int) = when (position) {
-            0 -> if (externalAdapter!!.itemCount == 0) ITEM_VIEW_TYPE_EMPTY else ITEM_VIEW_TYPE_HEADER
+            0 -> if (isEmptyExternalAdapter()) ITEM_VIEW_TYPE_EMPTY else ITEM_VIEW_TYPE_HEADER
             itemCount - 1 -> ITEM_VIEW_TYPE_FOOTER
             else -> {
                 val itemViewType = externalAdapter!!.getItemViewType(position - 1)
@@ -410,6 +413,7 @@ class RecyclerView2 @JvmOverloads constructor(context: Context, attrs: Attribute
     private inner class EmptyViewHolder : InternalViewHolder() {
 
         override fun update() {
+            emptyView.onLoadStatusChanged(loadStatus)
             val height = this@RecyclerView2.height - footerView.getViewMinHeight()
             val params = itemView.layoutParams
             if (params.height != height) {
@@ -442,12 +446,15 @@ class RecyclerView2 @JvmOverloads constructor(context: Context, attrs: Attribute
     private inner class FooterViewHolder : InternalViewHolder() {
 
         override fun update() {
-            footerView.onLoadStatusChanged(loadStatus)
             val params = itemView.layoutParams
-            val height = if (isEnableLoadMore && (loadStatus == LoadStatus.STATUS_LOADING_MORE || loadStatus == LoadStatus.STATUS_NO_MORE_DATA || loadStatus == LoadStatus.STATUS_LOAD_FAILED))
-                footerView.getViewMaxHeight()
-            else
-                footerView.getViewMinHeight()
+            var height = footerView.getViewMinHeight()
+            if (!isEmptyExternalAdapter()) {
+                footerView.onLoadStatusChanged(loadStatus)
+                height = if (isEnableLoadMore && (loadStatus == LoadStatus.STATUS_LOADING_MORE || loadStatus == LoadStatus.STATUS_NO_MORE_DATA || loadStatus == LoadStatus.STATUS_LOAD_FAILED))
+                    footerView.getViewMaxHeight()
+                else
+                    footerView.getViewMinHeight()
+            }
             if (params.height != height) {
                 params.height = height
                 itemView.layoutParams = params

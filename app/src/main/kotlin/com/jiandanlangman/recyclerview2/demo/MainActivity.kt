@@ -7,6 +7,7 @@ import android.view.LayoutInflater
 import android.view.View
 import android.view.ViewGroup
 import android.widget.TextView
+import androidx.recyclerview.widget.GridLayoutManager
 import androidx.recyclerview.widget.RecyclerView
 import androidx.recyclerview.widget.StaggeredGridLayoutManager
 import com.jiandanlangman.recyclerview2.LoadStatus
@@ -29,22 +30,29 @@ class MainActivity : AppCompatActivity() {
         val adapter = Adapter()
 
         val recyclerView = findViewById<RecyclerView2>(R.id.recyclerView)
-        recyclerView.layoutManager = StaggeredGridLayoutManager( 2, RecyclerView.VERTICAL)
+        recyclerView.layoutManager = GridLayoutManager(this, 2, RecyclerView.VERTICAL, false)
         recyclerView.setOnLoadStatusChangedListener {
                 recyclerView.postDelayed({
-                    if(it == LoadStatus.STATUS_REFRESHING) {
-                        datas.clear()
-                        datas.addAll(tempDatas)
-                    } else {
-                        for (i in 0 until 100)
-                            datas.add("这是一条纯文本的ITEM")
-                    }
+//
+//                    if(it == LoadStatus.STATUS_REFRESHING) {
+//                        datas.clear()
+//
+//                    } else {
+////                        for (i in 0 until 100)
+////                            datas.add("这是一条纯文本的ITEM")
+//                    }
+//                    datas.add("这是一条纯文本的ITEM")
                     adapter.notifyDataSetChanged()
-                    recyclerView.setLoadStatus(LoadStatus.STATUS_NORMAL)
+                    recyclerView.setLoadStatus(LoadStatus.STATUS_LOAD_FAILED)
                 }, 400)
         }
-       datas.addAll(tempDatas)
+//       datas.addAll(tempDatas)
         recyclerView.adapter = adapter
+        recyclerView.setLoadStatus(LoadStatus.STATUS_REFRESHING)
+        recyclerView.postDelayed({
+            recyclerView.setLoadStatus(LoadStatus.STATUS_LOAD_FAILED)
+        }, 2000)
+//        adapter.notifyDataSetChanged()
     }
 
     private inner class ViewHolder(itemView: View) : RecyclerView.ViewHolder(itemView) {
