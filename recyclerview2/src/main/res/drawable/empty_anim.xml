@@ -1,0 +1,36 @@
+<?xml version="1.0" encoding="utf-8"?>
+<animation-list xmlns:android="http://schemas.android.com/apk/res/android" android:oneshot="false">
+
+    <item android:drawable="@drawable/empty00" android:duration="80" />
+    <item android:drawable="@drawable/empty01" android:duration="80" />
+    <item android:drawable="@drawable/empty02" android:duration="80" />
+    <item android:drawable="@drawable/empty03" android:duration="80" />
+    <item android:drawable="@drawable/empty04" android:duration="80" />
+    <item android:drawable="@drawable/empty05" android:duration="80" />
+    <item android:drawable="@drawable/empty06" android:duration="80" />
+    <item android:drawable="@drawable/empty07" android:duration="80" />
+    <item android:drawable="@drawable/empty08" android:duration="80" />
+    <item android:drawable="@drawable/empty09" android:duration="80" />
+    <item android:drawable="@drawable/empty10" android:duration="80" />
+    <item android:drawable="@drawable/empty11" android:duration="80" />
+    <item android:drawable="@drawable/empty12" android:duration="80" />
+    <item android:drawable="@drawable/empty13" android:duration="80" />
+    <item android:drawable="@drawable/empty14" android:duration="80" />
+    <item android:drawable="@drawable/empty15" android:duration="80" />
+    <item android:drawable="@drawable/empty16" android:duration="80" />
+    <item android:drawable="@drawable/empty17" android:duration="80" />
+    <item android:drawable="@drawable/empty18" android:duration="80" />
+    <item android:drawable="@drawable/empty19" android:duration="80" />
+    <item android:drawable="@drawable/empty20" android:duration="80" />
+    <item android:drawable="@drawable/empty21" android:duration="80" />
+    <item android:drawable="@drawable/empty22" android:duration="80" />
+    <item android:drawable="@drawable/empty23" android:duration="80" />
+    <item android:drawable="@drawable/empty24" android:duration="80" />
+    <item android:drawable="@drawable/empty25" android:duration="80" />
+    <item android:drawable="@drawable/empty26" android:duration="80" />
+    <item android:drawable="@drawable/empty27" android:duration="80" />
+    <item android:drawable="@drawable/empty28" android:duration="80" />
+    <item android:drawable="@drawable/empty29" android:duration="80" />
+    <item android:drawable="@drawable/empty00" android:duration="9600" />
+
+</animation-list>

@@ -53,11 +53,13 @@ class DefaultEmptyView @JvmOverloads constructor(context: Context, attrs: Attrib
                     imageDrawable = ContextCompat.getDrawable(context, R.drawable.large_loading_fail_anim) as AnimationDrawable
                     imageView.setImageDrawable(imageDrawable)
                     imageDrawable!!.start()
-                    hintView.text = "加载失败，点击重试."
+                    hintView.text = "加载失败，点击重新加载"
                 }
                 LoadStatus.STATUS_NO_MORE_DATA -> {
-                    imageView.setImageResource(R.drawable.no_data)
-                    hintView.text = ""
+                    imageDrawable = ContextCompat.getDrawable(context, R.drawable.empty_anim) as AnimationDrawable
+                    imageView.setImageDrawable(imageDrawable)
+                    imageDrawable!!.start()
+                    hintView.text = "暂无数据，点击重新加载"
                 }
                 else -> {
                     imageDrawable = null

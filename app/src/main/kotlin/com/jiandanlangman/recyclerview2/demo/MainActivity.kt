@@ -34,9 +34,8 @@ class MainActivity : AppCompatActivity() {
         recyclerView.layoutManager = layotManager
         recyclerView.setOnLoadStatusChangedListener {
                 recyclerView.postDelayed({
-//
 //                    if(it == LoadStatus.STATUS_REFRESHING) {
-//                        datas.clear()
+                        datas.clear()
 //
 //                    } else {
 ////                        for (i in 0 until 100)
@@ -44,14 +43,14 @@ class MainActivity : AppCompatActivity() {
 //                    }
 //                    datas.add("这是一条纯文本的ITEM")
                     adapter.notifyDataSetChanged()
-                    recyclerView.setLoadStatus(LoadStatus.STATUS_LOAD_FAILED)
+                    recyclerView.setLoadStatus(LoadStatus.STATUS_NO_MORE_DATA)
                 }, 4000)
         }
        datas.addAll(tempDatas)
         recyclerView.adapter = adapter
-        recyclerView.postDelayed({
-            recyclerView.fastScrollToTop(5000)
-        }, 5000)
+//        recyclerView.postDelayed({
+//            recyclerView.fastScrollToTop(5000)
+//        }, 5000)
 //        adapter.notifyDataSetChanged()
     }
 
