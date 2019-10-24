@@ -142,7 +142,7 @@ class RecyclerView2 @JvmOverloads constructor(context: Context, attrs: Attribute
             val spanCount = layout.spanCount
             val externalSpanSizeLookup = layout.spanSizeLookup
             layout.spanSizeLookup = object : GridLayoutManager.SpanSizeLookup() {
-                override fun getSpanSize(position: Int) = if (internalAdapter.getItemViewType(position) == ITEM_VIEW_TYPE_EMPTY || internalAdapter.getItemViewType(position) == ITEM_VIEW_TYPE_HEADER || internalAdapter.getItemViewType(position) == ITEM_VIEW_TYPE_FOOTER) spanCount else externalSpanSizeLookup?.getSpanSize(position)
+                override fun getSpanSize(position: Int) = if (internalAdapter.getItemViewType(position) == ITEM_VIEW_TYPE_EMPTY || internalAdapter.getItemViewType(position) == ITEM_VIEW_TYPE_HEADER || internalAdapter.getItemViewType(position) == ITEM_VIEW_TYPE_FOOTER) spanCount else externalSpanSizeLookup?.getSpanSize(position - 1)
                         ?: 1
             }
             super.setLayoutManager(layout)
@@ -195,22 +195,24 @@ class RecyclerView2 @JvmOverloads constructor(context: Context, attrs: Attribute
     }
 
 
-    fun setLoadStatus(status: LoadStatus) = post {
-        if (loadStatus != status) {
-            val prevStatus = loadStatus
-            loadStatus = status
-            internalAdapter.notifyItemChanged(0, INTERNAL_PAYLOAD)
-            internalAdapter.notifyItemChanged(internalAdapter.itemCount - 1, INTERNAL_PAYLOAD)
-            if (isEnablePullToRefresh && prevStatus == LoadStatus.STATUS_REFRESHING && isTop()) {
-                isWaitingHeaderViewReady = true
-                postDelayed({
-                    animateHeaderViewHolderHeight(headerView.getViewMinHeight())
+    fun setLoadStatus(status: LoadStatus) {
+        val prevStatus = loadStatus
+        loadStatus = status
+        post {
+            if (loadStatus != status) {
+                internalAdapter.notifyItemChanged(0, INTERNAL_PAYLOAD)
+                internalAdapter.notifyItemChanged(internalAdapter.itemCount - 1, INTERNAL_PAYLOAD)
+                if (isEnablePullToRefresh && prevStatus == LoadStatus.STATUS_REFRESHING && isTop()) {
+                    isWaitingHeaderViewReady = true
+                    postDelayed({
+                        animateHeaderViewHolderHeight(headerView.getViewMinHeight())
+                        isWaitingHeaderViewReady = false
+                        autoLoadMore()
+                    }, 800)
+                } else {
                     isWaitingHeaderViewReady = false
                     autoLoadMore()
-                }, 800)
-            } else {
-                isWaitingHeaderViewReady = false
-                autoLoadMore()
+                }
             }
         }
     }
