@@ -130,9 +130,9 @@ class RecyclerView2 @JvmOverloads constructor(context: Context, attrs: Attribute
         internalAdapter.notifyDataSetChanged()
     }
 
-    override fun getAdapter(): Adapter<*>? {
-        return externalAdapter
-    }
+//    override fun getAdapter(): Adapter<*>? {
+//        return externalAdapter
+//    }
 
     override fun setLayoutManager(layout: LayoutManager?) = when (layout) {
         null -> super.setLayoutManager(layout)
