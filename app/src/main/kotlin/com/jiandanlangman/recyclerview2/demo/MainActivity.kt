@@ -43,8 +43,8 @@ class MainActivity : AppCompatActivity() {
 //                    }
 //                    datas.add("这是一条纯文本的ITEM")
                     adapter.notifyDataSetChanged()
-                    recyclerView.setLoadStatus(LoadStatus.STATUS_LOAD_FAILED)
-                }, 400)
+                    recyclerView.setLoadStatus(LoadStatus.STATUS_NO_MORE_DATA)
+                }, 4000)
         }
 //       datas.addAll(tempDatas)
         recyclerView.adapter = adapter

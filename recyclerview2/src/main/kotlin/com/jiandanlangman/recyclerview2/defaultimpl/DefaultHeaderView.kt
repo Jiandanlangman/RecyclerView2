@@ -1,10 +1,11 @@
 package com.jiandanlangman.recyclerview2.defaultimpl
 
+import android.animation.ValueAnimator
 import android.content.Context
+import android.graphics.drawable.AnimationDrawable
 import android.util.AttributeSet
 import android.view.LayoutInflater
-import android.view.View
-import android.view.animation.DecelerateInterpolator
+import android.view.ViewGroup
 import android.widget.ImageView
 import android.widget.TextView
 import androidx.constraintlayout.widget.ConstraintLayout
@@ -14,21 +15,25 @@ import com.jiandanlangman.recyclerview2.R
 
 class DefaultHeaderView @JvmOverloads constructor(context: Context, attrs: AttributeSet? = null, defStyleAttr: Int = 0) : ConstraintLayout(context, attrs, defStyleAttr), IHeaderView {
 
-    private val canRefreshHeight = (resources.displayMetrics.density * 44 + .5f).toInt()
-    private val viewMaxHeight = (resources.displayMetrics.density * 128 + .5f).toInt()
+    private val canRefreshHeight = (resources.displayMetrics.density * 50 + .5f).toInt()
+    private val viewMaxHeight = (resources.displayMetrics.density * 144 + .5f).toInt()
     private val viewMinHeight = 1
-    private val iconView: ImageView
+    private val imageView: ImageView
+    private val imageViewWidth: Int
+    private val imageViewHeight: Int
     private val hintView: TextView
-    private val loadingProgressBar: View
-    private val loadingHintView: View
+    private val onLayoutChangeListener = OnLayoutChangeListener { _, _, top, _, bottom, _, _, _, _ ->
+        onLayoutChanged(bottom - top)
+    }
     private var loadStatus: LoadStatus? = null
+    private var animator: ValueAnimator? = null
 
     init {
         LayoutInflater.from(context).inflate(R.layout.recyclerview2_default_header_view, this, true)
-        iconView = findViewById(R.id.icon)
+        imageView = findViewById(R.id.image)
+        imageViewWidth = imageView.layoutParams.width
+        imageViewHeight = imageView.layoutParams.height
         hintView = findViewById(R.id.hint)
-        loadingProgressBar = findViewById(R.id.loadingProgressBar)
-        loadingHintView = findViewById(R.id.loadingHint)
     }
 
     override fun getView() = this
@@ -42,62 +47,69 @@ class DefaultHeaderView @JvmOverloads constructor(context: Context, attrs: Attri
     override fun onCanRefreshStatusChanged(canRefresh: Boolean) {
         loadStatus = null
         if (canRefresh) {
+            animator?.cancel()
+            animator = ValueAnimator.ofFloat(1f, 1.24f, 1f, 1.12f, 1f)
+            animator!!.duration = 600
+            animator!!.addUpdateListener {
+                val value = it.animatedValue as Float
+                imageView.scaleX = value
+                imageView.scaleY = value
+            }
+            animator!!.start()
             hintView.text = "松开刷新"
-            iconView.animate().cancel()
-            iconView.animate().rotation(-180f).setInterpolator(DecelerateInterpolator())
-                    .setDuration(200).start()
-            iconView.visibility = View.VISIBLE
-            hintView.visibility = View.VISIBLE
         } else {
+            animator?.cancel()
+            imageView.scaleX = 1f
+            imageView.scaleY = 1f
             hintView.text = "下拉刷新"
-            iconView.animate().cancel()
-            iconView.animate().rotation(0f).setInterpolator(DecelerateInterpolator())
-                    .setDuration(200).start()
         }
-        iconView.setImageResource(R.drawable.recyclerview2_arrow)
-        iconView.visibility = View.VISIBLE
-        hintView.visibility = View.VISIBLE
-        loadingProgressBar.visibility = View.GONE
-        loadingHintView.visibility = View.GONE
     }
 
     override fun onLoadStatusChanged(status: LoadStatus) {
         if (status != loadStatus) {
             this.loadStatus = status
-            iconView.animate().cancel()
-            iconView.rotation = 0f
+            imageView.animate().cancel()
+            imageView.rotation = 0f
             when (status) {
                 LoadStatus.STATUS_REFRESHING -> {
-                    iconView.visibility = View.GONE
-                    hintView.visibility = View.GONE
-                    loadingProgressBar.visibility = View.VISIBLE
-                    loadingHintView.visibility = View.VISIBLE
+                    (imageView.drawable as AnimationDrawable).start()
+                    hintView.text = "正在刷新，请稍后..."
                 }
                 LoadStatus.STATUS_LOAD_FAILED -> {
+                    (imageView.drawable as AnimationDrawable).stop()
                     hintView.text = "刷新失败！"
-                    iconView.setImageResource(R.drawable.error)
-                    iconView.visibility = View.VISIBLE
-                    hintView.visibility = View.VISIBLE
-                    loadingProgressBar.visibility = View.GONE
-                    loadingHintView.visibility = View.GONE
                 }
                 LoadStatus.STATUS_NO_MORE_DATA, LoadStatus.STATUS_NORMAL -> {
+                    (imageView.drawable as AnimationDrawable).stop()
                     hintView.text = "刷新成功！"
-                    iconView.setImageResource(R.drawable.smile)
-                    iconView.visibility = View.VISIBLE
-                    hintView.visibility = View.VISIBLE
-                    loadingProgressBar.visibility = View.GONE
-                    loadingHintView.visibility = View.GONE
                 }
                 else -> {
-                    iconView.setImageResource(R.drawable.recyclerview2_arrow)
+                    (imageView.drawable as AnimationDrawable).stop()
                     hintView.text = "下拉刷新"
-                    iconView.visibility = View.VISIBLE
-                    hintView.visibility = View.VISIBLE
-                    loadingProgressBar.visibility = View.GONE
-                    loadingHintView.visibility = View.GONE
                 }
             }
+        }
+    }
+
+    override fun onAttachedToWindow() {
+        super.onAttachedToWindow()
+        (parent as ViewGroup).addOnLayoutChangeListener(onLayoutChangeListener)
+    }
+
+    override fun onDetachedFromWindow() {
+        super.onDetachedFromWindow()
+        (imageView.drawable as AnimationDrawable).stop()
+        (parent as ViewGroup).removeOnLayoutChangeListener(onLayoutChangeListener)
+    }
+
+    private fun onLayoutChanged(newHeight: Int) {
+        if (newHeight <= getCanRefreshHeight()) {
+            val scale = newHeight.toFloat() / getCanRefreshHeight()
+            imageView.alpha = scale
+            val params = imageView.layoutParams
+            params.width = (imageViewWidth * scale + .5f).toInt()
+            params.height = (imageViewHeight * scale + .5f).toInt()
+            imageView.layoutParams = params
         }
     }
 

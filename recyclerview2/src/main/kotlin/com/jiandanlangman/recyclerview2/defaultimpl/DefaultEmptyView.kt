@@ -4,6 +4,7 @@ import android.content.Context
 import android.graphics.drawable.AnimationDrawable
 import android.util.AttributeSet
 import android.view.LayoutInflater
+import android.view.View
 import android.widget.ImageView
 import android.widget.TextView
 import androidx.constraintlayout.widget.ConstraintLayout
@@ -24,9 +25,7 @@ class DefaultEmptyView @JvmOverloads constructor(context: Context, attrs: Attrib
         LayoutInflater.from(context).inflate(R.layout.recyclerview2_default_empty_view, this, true)
         imageView = findViewById(R.id.image)
         hintView = findViewById(R.id.hint)
-        isFocusable = true
-        isClickable = true
-        setOnClickListener {
+        findViewById<View>(R.id.contentLayout).setOnClickListener {
             if (LoadStatus.STATUS_NO_MORE_DATA == loadStatus || LoadStatus.STATUS_LOAD_FAILED == loadStatus) {
                 val target = parent?.parent as? RecyclerView2
                 if (target != null) {
@@ -57,10 +56,8 @@ class DefaultEmptyView @JvmOverloads constructor(context: Context, attrs: Attrib
                     hintView.text = "加载失败，点击重试."
                 }
                 LoadStatus.STATUS_NO_MORE_DATA -> {
-                    imageDrawable = ContextCompat.getDrawable(context, R.drawable.large_loading_anim) as AnimationDrawable
-                    imageView.setImageDrawable(imageDrawable)
-                    imageDrawable!!.start()
-                    hintView.text = "暂时没有数据，点击刷新."
+                    imageView.setImageResource(R.drawable.no_data)
+                    hintView.text = ""
                 }
                 else -> {
                     imageDrawable = null
