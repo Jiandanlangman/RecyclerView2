@@ -32,7 +32,8 @@ class DefaultFooterView @JvmOverloads constructor(context: Context, attrs: Attri
                 val target = parent?.parent as? RecyclerView2
                 if (target != null) {
                     target.setLoadStatus(LoadStatus.STATUS_LOADING_MORE)
-                    target.notifyLoadStatusChanged()
+                    target.setLoadStatus(LoadStatus.STATUS_REFRESHING)
+                    target.post { target.notifyLoadStatusChanged() }
                 }
             }
         }

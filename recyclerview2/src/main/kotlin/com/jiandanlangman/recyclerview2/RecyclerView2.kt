@@ -195,24 +195,22 @@ class RecyclerView2 @JvmOverloads constructor(context: Context, attrs: Attribute
     }
 
 
-    fun setLoadStatus(status: LoadStatus) {
-        val prevStatus = loadStatus
-        loadStatus = status
-        post {
-            if (loadStatus != status) {
-                internalAdapter.notifyItemChanged(0, INTERNAL_PAYLOAD)
-                internalAdapter.notifyItemChanged(internalAdapter.itemCount - 1, INTERNAL_PAYLOAD)
-                if (isEnablePullToRefresh && prevStatus == LoadStatus.STATUS_REFRESHING && isTop()) {
-                    isWaitingHeaderViewReady = true
-                    postDelayed({
-                        animateHeaderViewHolderHeight(headerView.getViewMinHeight())
-                        isWaitingHeaderViewReady = false
-                        autoLoadMore()
-                    }, 800)
-                } else {
+    fun setLoadStatus(status: LoadStatus) = post {
+        if (loadStatus != status) {
+            val prevStatus = loadStatus
+            loadStatus = status
+            internalAdapter.notifyItemChanged(0, INTERNAL_PAYLOAD)
+            internalAdapter.notifyItemChanged(internalAdapter.itemCount - 1, INTERNAL_PAYLOAD)
+            if (isEnablePullToRefresh && prevStatus == LoadStatus.STATUS_REFRESHING && isTop()) {
+                isWaitingHeaderViewReady = true
+                postDelayed({
+                    animateHeaderViewHolderHeight(headerView.getViewMinHeight())
                     isWaitingHeaderViewReady = false
                     autoLoadMore()
-                }
+                }, 800)
+            } else {
+                isWaitingHeaderViewReady = false
+                autoLoadMore()
             }
         }
     }

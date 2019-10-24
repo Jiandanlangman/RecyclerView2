@@ -30,7 +30,7 @@ class DefaultEmptyView @JvmOverloads constructor(context: Context, attrs: Attrib
                 val target = parent?.parent as? RecyclerView2
                 if (target != null) {
                     target.setLoadStatus(LoadStatus.STATUS_REFRESHING)
-                    target.notifyLoadStatusChanged()
+                    target.post { target.notifyLoadStatusChanged() }
                 }
             }
         }
