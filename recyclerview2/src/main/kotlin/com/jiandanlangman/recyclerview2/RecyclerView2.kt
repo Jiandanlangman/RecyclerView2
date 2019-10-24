@@ -130,21 +130,21 @@ class RecyclerView2 @JvmOverloads constructor(context: Context, attrs: Attribute
         internalAdapter.notifyDataSetChanged()
     }
 
-//    override fun getAdapter(): Adapter<*>? {
-//        return externalAdapter
-//    }
+    override fun getAdapter(): Adapter<*>? {
+        return externalAdapter
+    }
 
     override fun setLayoutManager(layout: LayoutManager?) = when (layout) {
         null -> super.setLayoutManager(layout)
         is GridLayoutManager -> {
             if (VERTICAL != layout.orientation)
                 throw RuntimeException("Only LinearLayoutManager, GridLayoutManager, StaggeredGridLayoutManager can be set, and the direction must be RecyclerView.VERTICAL")
-//            val spanCount = layout.spanCount
-//            val externalSpanSizeLookup = layout.spanSizeLookup
-//            layout.spanSizeLookup = object : GridLayoutManager.SpanSizeLookup() {
-//                override fun getSpanSize(position: Int) = if (internalAdapter.getItemViewType(position) == ITEM_VIEW_TYPE_EMPTY || internalAdapter.getItemViewType(position) == ITEM_VIEW_TYPE_HEADER || internalAdapter.getItemViewType(position) == ITEM_VIEW_TYPE_FOOTER) spanCount else externalSpanSizeLookup?.getSpanSize(position)
-//                        ?: 1
-//            }
+            val spanCount = layout.spanCount
+            val externalSpanSizeLookup = layout.spanSizeLookup
+            layout.spanSizeLookup = object : GridLayoutManager.SpanSizeLookup() {
+                override fun getSpanSize(position: Int) = if (internalAdapter.getItemViewType(position) == ITEM_VIEW_TYPE_EMPTY || internalAdapter.getItemViewType(position) == ITEM_VIEW_TYPE_HEADER || internalAdapter.getItemViewType(position) == ITEM_VIEW_TYPE_FOOTER) spanCount else externalSpanSizeLookup?.getSpanSize(position)
+                        ?: 1
+            }
             super.setLayoutManager(layout)
         }
         is StaggeredGridLayoutManager -> {
