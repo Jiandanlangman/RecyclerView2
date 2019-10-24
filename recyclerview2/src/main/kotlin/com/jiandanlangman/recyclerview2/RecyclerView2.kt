@@ -15,6 +15,7 @@ import androidx.recyclerview.widget.StaggeredGridLayoutManager
 import com.jiandanlangman.recyclerview2.defaultimpl.DefaultEmptyView
 import com.jiandanlangman.recyclerview2.defaultimpl.DefaultFooterView
 import com.jiandanlangman.recyclerview2.defaultimpl.DefaultHeaderView
+import java.lang.Exception
 
 class RecyclerView2 @JvmOverloads constructor(context: Context, attrs: AttributeSet? = null, defStyleAttr: Int = 0) : RecyclerView(context, attrs, defStyleAttr) {
 
@@ -66,6 +67,13 @@ class RecyclerView2 @JvmOverloads constructor(context: Context, attrs: Attribute
             override fun onItemRangeChanged(positionStart: Int, itemCount: Int, payload: Any?) = internalAdapter.notifyItemRangeChanged(positionStart + 1, itemCount, payload)
         }
         headerViewLayoutParams.bottomToBottom = ConstraintLayout.LayoutParams.PARENT_ID
+        try {
+            val field = this::class.java.superclass!!.getDeclaredField("mMaxFlingVelocity")
+            field.isAccessible = true
+            field.set(this, Int.MAX_VALUE)
+        } catch (ignore: Exception) {
+
+        }
     }
 
     override fun onSizeChanged(w: Int, h: Int, oldw: Int, oldh: Int) {
@@ -179,16 +187,16 @@ class RecyclerView2 @JvmOverloads constructor(context: Context, attrs: Attribute
         }
     }
 
-    override fun onScrollStateChanged(state: Int) {
-        super.onScrollStateChanged(state)
-        if (state == SCROLL_STATE_IDLE && isFastScrolling) {
+    override fun computeScroll() {
+        if (scroller.computeScrollOffset()) {
+            scrollBy(0, scroller.currY - fastScrolledY)
+            fastScrolledY = scroller.currY
+        } else if (isFastScrolling) {
             isFastScrolling = false
-            if (!isTop())
-                scrollToPosition(0)
+            scrollToPosition(0)
             fastScrollToTopCompleteListener.invoke()
         }
     }
-
 
     fun setOnLoadStatusChangedListener(listener: (status: LoadStatus) -> Unit) {
         onLoadStatusChangedListener = listener
@@ -264,13 +272,6 @@ class RecyclerView2 @JvmOverloads constructor(context: Context, attrs: Attribute
     }
 
     fun fastScrollToTop() = fastScrollToTop(FAST_SCROLL_TO_TOP_DEFAULT_DURATION)
-
-    override fun computeScroll() {
-        if (scroller.computeScrollOffset()) {
-            scrollBy(0, scroller.currY - fastScrolledY)
-            fastScrolledY = scroller.currY
-        }
-    }
 
 
     internal fun notifyLoadStatusChanged() = onLoadStatusChangedListener.invoke(loadStatus)

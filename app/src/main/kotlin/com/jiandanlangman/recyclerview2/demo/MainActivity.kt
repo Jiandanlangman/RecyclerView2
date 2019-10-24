@@ -44,15 +44,14 @@ class MainActivity : AppCompatActivity() {
 //                    }
 //                    datas.add("这是一条纯文本的ITEM")
                     adapter.notifyDataSetChanged()
-                    recyclerView.setLoadStatus(LoadStatus.STATUS_NO_MORE_DATA)
+                    recyclerView.setLoadStatus(LoadStatus.STATUS_LOAD_FAILED)
                 }, 4000)
         }
        datas.addAll(tempDatas)
         recyclerView.adapter = adapter
-        recyclerView.setLoadStatus(LoadStatus.STATUS_REFRESHING)
         recyclerView.postDelayed({
-            recyclerView.setLoadStatus(LoadStatus.STATUS_LOAD_FAILED)
-        }, 2000)
+            recyclerView.fastScrollToTop(5000)
+        }, 5000)
 //        adapter.notifyDataSetChanged()
     }
 

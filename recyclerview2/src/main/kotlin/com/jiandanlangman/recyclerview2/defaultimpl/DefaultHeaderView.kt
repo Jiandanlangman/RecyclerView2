@@ -15,11 +15,10 @@ import com.jiandanlangman.recyclerview2.R
 
 class DefaultHeaderView @JvmOverloads constructor(context: Context, attrs: AttributeSet? = null, defStyleAttr: Int = 0) : ConstraintLayout(context, attrs, defStyleAttr), IHeaderView {
 
-    private val canRefreshHeight = (resources.displayMetrics.density * 50 + .5f).toInt()
+    private val canRefreshHeight = (resources.displayMetrics.density * 48 + .5f).toInt()
     private val viewMaxHeight = (resources.displayMetrics.density * 144 + .5f).toInt()
     private val viewMinHeight = 1
     private val imageView: ImageView
-    private val imageViewWidth: Int
     private val imageViewHeight: Int
     private val hintView: TextView
     private val onLayoutChangeListener = OnLayoutChangeListener { _, _, top, _, bottom, _, _, _, _ ->
@@ -31,7 +30,6 @@ class DefaultHeaderView @JvmOverloads constructor(context: Context, attrs: Attri
     init {
         LayoutInflater.from(context).inflate(R.layout.recyclerview2_default_header_view, this, true)
         imageView = findViewById(R.id.image)
-        imageViewWidth = imageView.layoutParams.width
         imageViewHeight = imageView.layoutParams.height
         hintView = findViewById(R.id.hint)
     }
@@ -63,30 +61,41 @@ class DefaultHeaderView @JvmOverloads constructor(context: Context, attrs: Attri
             imageView.scaleY = 1f
             hintView.text = "下拉刷新"
         }
+        if (0 != imageView.tag) {
+            (imageView.drawable as? AnimationDrawable)?.stop()
+            imageView.setImageResource(R.drawable.heart_loading_00000)
+            imageView.tag = 0
+        }
     }
 
     override fun onLoadStatusChanged(status: LoadStatus) {
         if (status != loadStatus) {
             this.loadStatus = status
-            imageView.animate().cancel()
-            imageView.rotation = 0f
+            (imageView.drawable as? AnimationDrawable)?.stop()
             when (status) {
                 LoadStatus.STATUS_REFRESHING -> {
-                    (imageView.drawable as AnimationDrawable).start()
-                    hintView.text = "正在刷新，请稍后..."
+                    if(1 != imageView.tag) {
+                        imageView.setImageResource(R.drawable.heart_loading_anim)
+                        (imageView.drawable as AnimationDrawable).start()
+                        hintView.text = "正在刷新，请稍后..."
+                        imageView.tag = 1
+                    }
                 }
                 LoadStatus.STATUS_LOAD_FAILED -> {
-                    (imageView.drawable as AnimationDrawable).stop()
-                    hintView.text = "刷新失败！"
+                    if(2 != imageView.tag) {
+                        imageView.setImageResource(R.drawable.heart_load_failed)
+                        hintView.text = "刷新失败"
+                        imageView.tag = 2
+                    }
                 }
                 LoadStatus.STATUS_NO_MORE_DATA, LoadStatus.STATUS_NORMAL -> {
-                    (imageView.drawable as AnimationDrawable).stop()
-                    hintView.text = "刷新成功！"
+                    if(3 != imageView.tag) {
+                        imageView.setImageResource(R.drawable.heart_loading_00029)
+                        hintView.text = "刷新成功"
+                        imageView.tag = 3
+                    }
                 }
-                else -> {
-                    (imageView.drawable as AnimationDrawable).stop()
-                    hintView.text = "下拉刷新"
-                }
+                else -> {}
             }
         }
     }
@@ -98,7 +107,8 @@ class DefaultHeaderView @JvmOverloads constructor(context: Context, attrs: Attri
 
     override fun onDetachedFromWindow() {
         super.onDetachedFromWindow()
-        (imageView.drawable as AnimationDrawable).stop()
+        (imageView.drawable as? AnimationDrawable)?.stop()
+        imageView.tag = null
         (parent as ViewGroup).removeOnLayoutChangeListener(onLayoutChangeListener)
     }
 
@@ -107,7 +117,6 @@ class DefaultHeaderView @JvmOverloads constructor(context: Context, attrs: Attri
             val scale = newHeight.toFloat() / getCanRefreshHeight()
             imageView.alpha = scale
             val params = imageView.layoutParams
-            params.width = (imageViewWidth * scale + .5f).toInt()
             params.height = (imageViewHeight * scale + .5f).toInt()
             imageView.layoutParams = params
         }
