@@ -315,12 +315,10 @@ class RecyclerView2 @JvmOverloads constructor(context: Context, attrs: Attribute
 
     private inner class InternalAdapter : RecyclerView.Adapter<ViewHolder>() {
 
-//        override fun getItemId(position: Int) = when (getItemViewType(position)) {
-//            ITEM_VIEW_TYPE_EMPTY -> ITEM_VIEW_TYPE_EMPTY.toLong()
-//            ITEM_VIEW_TYPE_HEADER -> ITEM_VIEW_TYPE_HEADER.toLong()
-//            ITEM_VIEW_TYPE_FOOTER -> ITEM_VIEW_TYPE_FOOTER.toLong()
-//            else -> externalAdapter!!.getItemId(position - 1)
-//        }
+        override fun getItemId(position: Int) = when (getItemViewType(position)) {
+            ITEM_VIEW_TYPE_EMPTY, ITEM_VIEW_TYPE_HEADER, ITEM_VIEW_TYPE_FOOTER -> NO_ID
+            else -> externalAdapter!!.getItemId(position - 1)
+        }
 
         override fun onFailedToRecycleView(holder: ViewHolder) = if (holder is InternalViewHolder) super.onFailedToRecycleView(holder) else externalAdapter!!.onFailedToRecycleView(holder)
 
@@ -338,11 +336,11 @@ class RecyclerView2 @JvmOverloads constructor(context: Context, attrs: Attribute
         override fun onBindViewHolder(holder: ViewHolder, position: Int, payloads: MutableList<Any>) {
             when (holder) {
                 is InternalViewHolder -> holder.update()
-                else -> externalAdapter!!.onBindViewHolder(holder, position - 1, payloads)
+                else -> super.onBindViewHolder(holder, position, payloads)
             }
         }
 
-        override fun onBindViewHolder(holder: ViewHolder, position: Int) = externalAdapter!!.onBindViewHolder(holder, position)
+        override fun onBindViewHolder(holder: ViewHolder, position: Int) = externalAdapter!!.onBindViewHolder(holder, position - 1)
 
         override fun onViewAttachedToWindow(holder: ViewHolder) {
             super.onViewAttachedToWindow(holder)

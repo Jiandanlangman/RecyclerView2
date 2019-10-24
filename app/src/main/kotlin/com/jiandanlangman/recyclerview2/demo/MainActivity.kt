@@ -30,13 +30,7 @@ class MainActivity : AppCompatActivity() {
         val adapter = Adapter()
 
         val recyclerView = findViewById<RecyclerView2>(R.id.recyclerView)
-        val layotManager = GridLayoutManager(this, 2)
-        layotManager.spanSizeLookup = object :GridLayoutManager.SpanSizeLookup() {
-            override fun getSpanSize(position: Int): Int {
-                return  1
-            }
-
-        }
+        val layotManager = StaggeredGridLayoutManager(2, RecyclerView.VERTICAL)
         recyclerView.layoutManager = layotManager
         recyclerView.setOnLoadStatusChangedListener {
                 recyclerView.postDelayed({
