@@ -139,12 +139,12 @@ class RecyclerView2 @JvmOverloads constructor(context: Context, attrs: Attribute
         is GridLayoutManager -> {
             if (VERTICAL != layout.orientation)
                 throw RuntimeException("Only LinearLayoutManager, GridLayoutManager, StaggeredGridLayoutManager can be set, and the direction must be RecyclerView.VERTICAL")
-            val spanCount = layout.spanCount
-            val externalSpanSizeLookup = layout.spanSizeLookup
-            layout.spanSizeLookup = object : GridLayoutManager.SpanSizeLookup() {
-                override fun getSpanSize(position: Int) = if (internalAdapter.getItemViewType(position) == ITEM_VIEW_TYPE_EMPTY || internalAdapter.getItemViewType(position) == ITEM_VIEW_TYPE_HEADER || internalAdapter.getItemViewType(position) == ITEM_VIEW_TYPE_FOOTER) spanCount else externalSpanSizeLookup?.getSpanSize(position - 1)
-                        ?: 1
-            }
+//            val spanCount = layout.spanCount
+//            val externalSpanSizeLookup = layout.spanSizeLookup
+//            layout.spanSizeLookup = object : GridLayoutManager.SpanSizeLookup() {
+//                override fun getSpanSize(position: Int) = if (internalAdapter.getItemViewType(position) == ITEM_VIEW_TYPE_EMPTY || internalAdapter.getItemViewType(position) == ITEM_VIEW_TYPE_HEADER || internalAdapter.getItemViewType(position) == ITEM_VIEW_TYPE_FOOTER) spanCount else externalSpanSizeLookup?.getSpanSize(position)
+//                        ?: 1
+//            }
             super.setLayoutManager(layout)
         }
         is StaggeredGridLayoutManager -> {
@@ -315,12 +315,12 @@ class RecyclerView2 @JvmOverloads constructor(context: Context, attrs: Attribute
 
     private inner class InternalAdapter : RecyclerView.Adapter<ViewHolder>() {
 
-        override fun getItemId(position: Int) = when (getItemViewType(position)) {
-            ITEM_VIEW_TYPE_EMPTY -> ITEM_VIEW_TYPE_EMPTY.toLong()
-            ITEM_VIEW_TYPE_HEADER -> ITEM_VIEW_TYPE_HEADER.toLong()
-            ITEM_VIEW_TYPE_FOOTER -> ITEM_VIEW_TYPE_FOOTER.toLong()
-            else -> externalAdapter!!.getItemId(position - 1)
-        }
+//        override fun getItemId(position: Int) = when (getItemViewType(position)) {
+//            ITEM_VIEW_TYPE_EMPTY -> ITEM_VIEW_TYPE_EMPTY.toLong()
+//            ITEM_VIEW_TYPE_HEADER -> ITEM_VIEW_TYPE_HEADER.toLong()
+//            ITEM_VIEW_TYPE_FOOTER -> ITEM_VIEW_TYPE_FOOTER.toLong()
+//            else -> externalAdapter!!.getItemId(position - 1)
+//        }
 
         override fun onFailedToRecycleView(holder: ViewHolder) = if (holder is InternalViewHolder) super.onFailedToRecycleView(holder) else externalAdapter!!.onFailedToRecycleView(holder)
 

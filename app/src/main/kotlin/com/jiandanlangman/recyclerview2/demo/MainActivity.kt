@@ -30,7 +30,14 @@ class MainActivity : AppCompatActivity() {
         val adapter = Adapter()
 
         val recyclerView = findViewById<RecyclerView2>(R.id.recyclerView)
-        recyclerView.layoutManager = GridLayoutManager(this, 2, RecyclerView.VERTICAL, false)
+        val layotManager = GridLayoutManager(this, 2)
+        layotManager.spanSizeLookup = object :GridLayoutManager.SpanSizeLookup() {
+            override fun getSpanSize(position: Int): Int {
+                return  1
+            }
+
+        }
+        recyclerView.layoutManager = layotManager
         recyclerView.setOnLoadStatusChangedListener {
                 recyclerView.postDelayed({
 //
@@ -46,7 +53,7 @@ class MainActivity : AppCompatActivity() {
                     recyclerView.setLoadStatus(LoadStatus.STATUS_NO_MORE_DATA)
                 }, 4000)
         }
-//       datas.addAll(tempDatas)
+       datas.addAll(tempDatas)
         recyclerView.adapter = adapter
         recyclerView.setLoadStatus(LoadStatus.STATUS_REFRESHING)
         recyclerView.postDelayed({
