@@ -34,24 +34,27 @@ class MainActivity : AppCompatActivity() {
         recyclerView.layoutManager = layotManager
         recyclerView.setOnLoadStatusChangedListener {
                 recyclerView.postDelayed({
-//                    if(it == LoadStatus.STATUS_REFRESHING) {
+                    if(it == LoadStatus.STATUS_REFRESHING) {
                         datas.clear()
-//
-//                    } else {
-////                        for (i in 0 until 100)
-////                            datas.add("这是一条纯文本的ITEM")
-//                    }
-//                    datas.add("这是一条纯文本的ITEM")
-                    adapter.notifyDataSetChanged()
-                    recyclerView.setLoadStatus(LoadStatus.STATUS_NO_MORE_DATA)
-                }, 4000)
+                        datas.addAll(tempDatas)
+                        adapter.notifyDataSetChanged()
+                        recyclerView.setLoadStatus(LoadStatus.STATUS_NORMAL)
+                    } else {
+                        for (i in 0 until 100)
+                            datas.add("这是一条纯文本的ITEM")
+                        adapter.notifyDataSetChanged()
+                        recyclerView.setLoadStatus(LoadStatus.STATUS_NORMAL)
+                    }
+
+                }, 2000)
         }
-       datas.addAll(tempDatas)
         recyclerView.adapter = adapter
-//        recyclerView.postDelayed({
-//            recyclerView.fastScrollToTop(5000)
-//        }, 5000)
-//        adapter.notifyDataSetChanged()
+        recyclerView.setLoadStatus(LoadStatus.STATUS_REFRESHING)
+        recyclerView.postDelayed({
+//            datas.addAll(tempDatas)
+//            adapter.notifyDataSetChanged()
+            recyclerView.setLoadStatus(LoadStatus.STATUS_NO_MORE_DATA)
+        }, 4000)
     }
 
     private inner class ViewHolder(itemView: View) : RecyclerView.ViewHolder(itemView) {

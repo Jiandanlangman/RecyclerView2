@@ -33,7 +33,7 @@
                 android:id="@+id/hint"
                 android:layout_width="wrap_content"
                 android:layout_height="wrap_content"
-                android:textColor="#999999"
+                android:textColor="#FF4D81"
                 android:textSize="12dp"
                 app:layout_constraintLeft_toLeftOf="parent"
                 app:layout_constraintRight_toRightOf="parent"

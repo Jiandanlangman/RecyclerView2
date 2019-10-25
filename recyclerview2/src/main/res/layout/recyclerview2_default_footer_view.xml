@@ -6,10 +6,11 @@
 
     <androidx.constraintlayout.widget.ConstraintLayout
         android:layout_width="match_parent"
-        android:layout_height="match_parent">
+        android:layout_height="36dp">
 
         <androidx.constraintlayout.widget.ConstraintLayout
             android:layout_width="wrap_content"
+            android:id="@+id/contentLayout"
             android:layout_height="wrap_content"
             app:layout_constraintBottom_toBottomOf="parent"
             app:layout_constraintLeft_toLeftOf="parent"
@@ -23,7 +24,7 @@
                 android:layout_width="14dp"
                 android:layout_height="14dp"
                 android:indeterminate="true"
-                android:indeterminateTint="#999999"
+                android:indeterminateTint="#FF4D81"
                 android:indeterminateTintMode="src_atop"
                 app:layout_constraintBottom_toBottomOf="parent"
                 app:layout_constraintLeft_toLeftOf="parent"
@@ -35,7 +36,7 @@
                 android:layout_height="wrap_content"
                 android:ellipsize="end"
                 android:singleLine="true"
-                android:textColor="#999999"
+                android:textColor="#FF4D81"
                 android:textSize="12dp"
                 android:layout_marginLeft="4dp"
                 app:layout_constraintBottom_toBottomOf="@id/progress"

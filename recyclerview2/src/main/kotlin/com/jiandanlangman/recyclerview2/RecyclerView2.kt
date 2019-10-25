@@ -1,11 +1,9 @@
 package com.jiandanlangman.recyclerview2
 
-import android.animation.ValueAnimator
 import android.content.Context
 import android.util.AttributeSet
 import android.view.*
 import android.view.animation.AccelerateDecelerateInterpolator
-import android.view.animation.DecelerateInterpolator
 import android.widget.Scroller
 import androidx.constraintlayout.widget.ConstraintLayout
 import androidx.recyclerview.widget.GridLayoutManager
@@ -24,8 +22,7 @@ class RecyclerView2 @JvmOverloads constructor(context: Context, attrs: Attribute
         private const val ITEM_VIEW_TYPE_HEADER = ITEM_VIEW_TYPE_EMPTY + 1
         private const val ITEM_VIEW_TYPE_FOOTER = ITEM_VIEW_TYPE_HEADER + 1
         private const val PRELOAD_DEFAULT_OFFSET = 6
-        private const val INTERNAL_PAYLOAD = "internalPayload"
-        private const val FAST_SCROLL_TO_TOP_DEFAULT_DURATION = 400
+        private const val FAST_SCROLL_TO_TOP_DEFAULT_DURATION = 0
     }
 
     private val internalAdapter = InternalAdapter()
@@ -41,18 +38,14 @@ class RecyclerView2 @JvmOverloads constructor(context: Context, attrs: Attribute
     private var isEnableLoadMore = true
     private var touchEventPrevY = 0f
     private var preloadOffset = PRELOAD_DEFAULT_OFFSET
-    private var emptyView: IEmptyView = DefaultEmptyView(context)
+    private var emptyView: IActionView = DefaultEmptyView(context)
     private var headerView: IHeaderView = DefaultHeaderView(context)
-    private var canRefreshStatus = -1
-    private var isWaitingHeaderViewReady = false
-    private var footerView: IFooterView = DefaultFooterView(context)
+    private var footerView: IActionView = DefaultFooterView(context)
     private var fastScrollToTopCompleteListener: () -> Unit = {}
     private var fastScrolledY = 0
     private var isFastScrolling = false
 
     private var externalAdapter: Adapter<ViewHolder>? = null
-    private var headerViewHolder: HeaderViewHolder? = null
-    private var setHeaderViewHolderHeightAnimator: ValueAnimator? = null
     private var staggeredGridLayoutManagerLastVisiblePositions: IntArray? = null
 
 
@@ -67,6 +60,9 @@ class RecyclerView2 @JvmOverloads constructor(context: Context, attrs: Attribute
             override fun onItemRangeChanged(positionStart: Int, itemCount: Int, payload: Any?) = internalAdapter.notifyItemRangeChanged(positionStart + 1, itemCount, payload)
         }
         headerViewLayoutParams.bottomToBottom = ConstraintLayout.LayoutParams.PARENT_ID
+        emptyView.onBindToRecyclerView(this, emptyViewLayoutParams)
+        headerView.onBindToRecyclerView(this, headerViewLayoutParams)
+        footerView.onBindToRecyclerView(this, footerViewLayoutParams)
         try {
             val field = this::class.java.superclass!!.getDeclaredField("mMaxFlingVelocity")
             field.isAccessible = true
@@ -76,10 +72,6 @@ class RecyclerView2 @JvmOverloads constructor(context: Context, attrs: Attribute
         }
     }
 
-    override fun onSizeChanged(w: Int, h: Int, oldw: Int, oldh: Int) {
-        super.onSizeChanged(w, h, oldw, oldh)
-        internalAdapter.notifyItemChanged(0, INTERNAL_PAYLOAD)
-    }
 
     override fun dispatchTouchEvent(ev: MotionEvent): Boolean {
         if (isFastScrolling) {
@@ -87,45 +79,19 @@ class RecyclerView2 @JvmOverloads constructor(context: Context, attrs: Attribute
             scroller.forceFinished(true)
             stopScroll()
         }
-        if (!isEnablePullToRefresh || loadStatus == LoadStatus.STATUS_REFRESHING || loadStatus == LoadStatus.STATUS_LOADING_MORE || isWaitingHeaderViewReady || setHeaderViewHolderHeightAnimator != null)
-            return super.dispatchTouchEvent(ev)
         val y = ev.y
-        when (ev.action) {
-            MotionEvent.ACTION_DOWN -> canRefreshStatus = -1
-            MotionEvent.ACTION_MOVE -> if (isEmptyExternalAdapter())
-                return true
-            else if (isTop()) {
-                val offset = y - touchEventPrevY
-                if (offset > 0 || headerViewHolder!!.itemView.layoutParams.height > headerView.getViewMinHeight()) {
-                    val paramsHeight = headerViewHolder!!.itemView.layoutParams.height
-                    var h = when {
-                        offset <= 0 -> (paramsHeight + offset).toInt()
-                        paramsHeight <= headerView.getCanRefreshHeight() -> (paramsHeight + offset * .32 + .5f).toInt()
-                        else -> (paramsHeight + offset * .12 + .5f).toInt()
-                    }
-                    if (h < 0)
-                        h = 0
-                    else if (h > headerView.getViewMaxHeight())
-                        h = headerView.getViewMaxHeight()
-                    val params = headerViewHolder!!.itemView.layoutParams
-                    params.height = h
-                    headerViewHolder!!.itemView.layoutParams = params
-                    val status = if (h >= headerView.getCanRefreshHeight()) 1 else 0
-                    if (status != canRefreshStatus) {
-                        canRefreshStatus = status
-                        headerView.onCanRefreshStatusChanged(canRefreshStatus == 1)
+        if (isEnablePullToRefresh && loadStatus != LoadStatus.STATUS_REFRESHING && loadStatus != LoadStatus.STATUS_LOADING_MORE)
+            when (ev.action) {
+                MotionEvent.ACTION_MOVE -> if (isEmptyExternalAdapter())
+                    return true
+                else if (isTop()) {
+                    if (headerView.onPullingDown(y - touchEventPrevY)) {
+                        touchEventPrevY = y
+                        return true
                     }
                 }
+                MotionEvent.ACTION_UP, MotionEvent.ACTION_CANCEL -> if (isTop()) headerView.onEndPullDown()
             }
-            MotionEvent.ACTION_UP, MotionEvent.ACTION_CANCEL -> if (isTop() && headerViewHolder!!.itemView.layoutParams.height > headerView.getViewMinHeight()) {
-                if (canRefreshStatus == 1) {
-                    headerView.onLoadStatusChanged(LoadStatus.STATUS_REFRESHING)
-                    loadStatus = LoadStatus.STATUS_REFRESHING
-                    notifyLoadStatusChanged()
-                }
-                animateHeaderViewHolderHeight(if (loadStatus == LoadStatus.STATUS_REFRESHING) headerView.getCanRefreshHeight() else headerView.getViewMinHeight())
-            }
-        }
         touchEventPrevY = y
         return super.dispatchTouchEvent(ev)
     }
@@ -172,7 +138,7 @@ class RecyclerView2 @JvmOverloads constructor(context: Context, attrs: Attribute
 
     override fun onScrolled(dx: Int, dy: Int) {
         super.onScrolled(dx, dy)
-        if (isEnableLoadMore && dy > 0 && loadStatus != LoadStatus.STATUS_REFRESHING && loadStatus != LoadStatus.STATUS_LOADING_MORE && !isEmptyExternalAdapter()) {
+        if (isEnableLoadMore && dy > 0 && loadStatus != LoadStatus.STATUS_REFRESHING && loadStatus != LoadStatus.STATUS_LOADING_MORE && loadStatus != LoadStatus.STATUS_NO_MORE_DATA && !isEmptyExternalAdapter()) {
             val lm = layoutManager
             val lastCompletelyVisibleItemPosition = if (lm is LinearLayoutManager) lm.findLastCompletelyVisibleItemPosition() else {
                 (lm as StaggeredGridLayoutManager).findLastCompletelyVisibleItemPositions(staggeredGridLayoutManagerLastVisiblePositions)
@@ -181,7 +147,7 @@ class RecyclerView2 @JvmOverloads constructor(context: Context, attrs: Attribute
             if (lastCompletelyVisibleItemPosition >= internalAdapter.itemCount - 1 - preloadOffset) {
                 loadStatus = LoadStatus.STATUS_LOADING_MORE
                 if (isBottom())
-                    post { internalAdapter.notifyItemChanged(internalAdapter.itemCount - 1, INTERNAL_PAYLOAD) }
+                    footerView.onRecyclerViewLoadStatusChanged(loadStatus)
                 notifyLoadStatusChanged()
             }
         }
@@ -203,23 +169,13 @@ class RecyclerView2 @JvmOverloads constructor(context: Context, attrs: Attribute
     }
 
 
-    fun setLoadStatus(status: LoadStatus) = post {
+    fun setLoadStatus(status: LoadStatus) {
         if (loadStatus != status) {
-            val prevStatus = loadStatus
             loadStatus = status
-            internalAdapter.notifyItemChanged(0, INTERNAL_PAYLOAD)
-            internalAdapter.notifyItemChanged(internalAdapter.itemCount - 1, INTERNAL_PAYLOAD)
-            if (isEnablePullToRefresh && prevStatus == LoadStatus.STATUS_REFRESHING && isTop()) {
-                isWaitingHeaderViewReady = true
-                postDelayed({
-                    animateHeaderViewHolderHeight(headerView.getViewMinHeight())
-                    isWaitingHeaderViewReady = false
-                    autoLoadMore()
-                }, 800)
-            } else {
-                isWaitingHeaderViewReady = false
-                autoLoadMore()
-            }
+            emptyView.onRecyclerViewLoadStatusChanged(status)
+            headerView.onRecyclerViewLoadStatusChanged(status)
+            footerView.onRecyclerViewLoadStatusChanged(status)
+            post { autoLoadMore() }
         }
     }
 
@@ -235,28 +191,28 @@ class RecyclerView2 @JvmOverloads constructor(context: Context, attrs: Attribute
         isEnableLoadMore = enabled
     }
 
-    fun setEmptyView(emptyView: IEmptyView) {
-        val oldEmptyView = this.emptyView.getView()
-        if (oldEmptyView.parent != null)
-            (oldEmptyView.parent as ViewGroup).removeView(oldEmptyView)
-        this.emptyView = emptyView
-        internalAdapter.notifyItemChanged(0, INTERNAL_PAYLOAD)
+    fun setEmptyView(emptyView: IActionView) {
+//        val oldEmptyView = this.emptyView.getView()
+//        if (oldEmptyView.parent != null)
+//            (oldEmptyView.parent as ViewGroup).removeView(oldEmptyView)
+//        this.emptyView = emptyView
+//        internalAdapter.notifyItemChanged(0, INTERNAL_PAYLOAD)
     }
 
     fun setHeaderView(headerView: IHeaderView) {
-        val oldHeaderView = this.headerView.getView()
-        if (oldHeaderView.parent != null)
-            (oldHeaderView.parent as ViewGroup).removeView(oldHeaderView)
-        this.headerView = headerView
-        internalAdapter.notifyItemChanged(0, INTERNAL_PAYLOAD)
+//        val oldHeaderView = this.headerView.getView()
+//        if (oldHeaderView.parent != null)
+//            (oldHeaderView.parent as ViewGroup).removeView(oldHeaderView)
+//        this.headerView = headerView
+//        internalAdapter.notifyItemChanged(0, INTERNAL_PAYLOAD)
     }
 
-    fun setFooterView(footerView: IFooterView) {
-        val oldFooterView = this.footerView.getView()
-        if (oldFooterView.parent != null)
-            (oldFooterView.parent as ViewGroup).removeView(oldFooterView)
-        this.footerView = footerView
-        internalAdapter.notifyItemChanged(internalAdapter.itemCount - 1, INTERNAL_PAYLOAD)
+    fun setFooterView(footerView: IActionView) {
+//        val oldFooterView = this.footerView.getView()
+//        if (oldFooterView.parent != null)
+//            (oldFooterView.parent as ViewGroup).removeView(oldFooterView)
+//        this.footerView = footerView
+//        internalAdapter.notifyItemChanged(internalAdapter.itemCount - 1, INTERNAL_PAYLOAD)
     }
 
     fun setFastScrollToTopCompleteListener(listener: () -> Unit) {
@@ -282,34 +238,11 @@ class RecyclerView2 @JvmOverloads constructor(context: Context, attrs: Attribute
 
     private fun isEmptyExternalAdapter() = internalAdapter.itemCount == 2
 
-    private fun animateHeaderViewHolderHeight(height: Int) {
-        if (headerViewHolder != null) {
-            setHeaderViewHolderHeightAnimator?.cancel()
-            setHeaderViewHolderHeightAnimator = ValueAnimator.ofInt(headerViewHolder!!.itemView.height, height)
-            setHeaderViewHolderHeightAnimator!!.duration = 200
-            setHeaderViewHolderHeightAnimator!!.interpolator = DecelerateInterpolator()
-            setHeaderViewHolderHeightAnimator!!.addUpdateListener {
-                if (headerViewHolder != null) {
-                    val animatedValue = it.animatedValue as Int
-                    val params = headerViewHolder!!.itemView.layoutParams
-                    params.height = animatedValue
-                    headerViewHolder!!.itemView.layoutParams = params
-                    if (animatedValue == height)
-                        setHeaderViewHolderHeightAnimator = null
-                } else {
-                    setHeaderViewHolderHeightAnimator!!.cancel()
-                    setHeaderViewHolderHeightAnimator = null
-                }
-            }
-            setHeaderViewHolderHeightAnimator!!.start()
-        }
-    }
-
     private fun autoLoadMore() {
         if (isEnableLoadMore && loadStatus == LoadStatus.STATUS_NORMAL && isBottom() && !isEmptyExternalAdapter()) {
             loadStatus = LoadStatus.STATUS_LOADING_MORE
             notifyLoadStatusChanged()
-            internalAdapter.notifyItemChanged(internalAdapter.itemCount - 1, INTERNAL_PAYLOAD)
+            footerView.onRecyclerViewLoadStatusChanged(loadStatus)
         }
     }
 
@@ -346,28 +279,14 @@ class RecyclerView2 @JvmOverloads constructor(context: Context, attrs: Attribute
         override fun onViewAttachedToWindow(holder: ViewHolder) {
             super.onViewAttachedToWindow(holder)
             if (holder is InternalViewHolder) {
-                val view: View
-                val viewParams: ConstraintLayout.LayoutParams
-                when (holder) {
-                    is EmptyViewHolder -> {
-                        view = emptyView.getView()
-                        viewParams = emptyViewLayoutParams
-                    }
-                    is HeaderViewHolder -> {
-                        headerViewHolder = holder
-                        view = headerView.getView()
-                        viewParams = headerViewLayoutParams
-                        viewParams.height = headerView.getCanRefreshHeight()
-                    }
-                    else -> {
-                        view = footerView.getView()
-                        viewParams = footerViewLayoutParams
-                        viewParams.height = footerView.getViewMaxHeight()
-                    }
+                val view: View = when (holder) {
+                    is EmptyViewHolder -> emptyView.getView()
+                    is HeaderViewHolder -> headerView.getView()
+                    else -> footerView.getView()
                 }
                 if (view.parent != null)
                     (view.parent as ViewGroup).removeView(view)
-                (holder.itemView as ConstraintLayout).addView(view, viewParams)
+                (holder.itemView as ConstraintLayout).addView(view)
                 if (layoutManager is StaggeredGridLayoutManager)
                     (holder.itemView.layoutParams as StaggeredGridLayoutManager.LayoutParams).isFullSpan = true
             } else
@@ -377,11 +296,7 @@ class RecyclerView2 @JvmOverloads constructor(context: Context, attrs: Attribute
         override fun onViewDetachedFromWindow(holder: ViewHolder) {
             super.onViewDetachedFromWindow(holder)
             when (holder) {
-                is InternalViewHolder -> {
-                    (holder.itemView as ConstraintLayout).removeAllViews()
-                    if (holder == headerViewHolder)
-                        headerViewHolder = null
-                }
+                is InternalViewHolder -> (holder.itemView as ConstraintLayout).removeAllViews()
                 else -> externalAdapter!!.onViewDetachedFromWindow(holder)
             }
         }
@@ -411,54 +326,19 @@ class RecyclerView2 @JvmOverloads constructor(context: Context, attrs: Attribute
 
     private inner class EmptyViewHolder : InternalViewHolder() {
 
-        override fun update() {
-            emptyView.onLoadStatusChanged(loadStatus)
-            val height = this@RecyclerView2.height - footerView.getViewMinHeight()
-            val params = itemView.layoutParams
-            if (params.height != height) {
-                params.height = height
-                itemView.layoutParams = params
-            }
-        }
+        override fun update() = emptyView.onRecyclerViewLoadStatusChanged(loadStatus)
 
     }
 
     private inner class HeaderViewHolder : InternalViewHolder() {
 
-        override fun update() {
-            headerView.onLoadStatusChanged(loadStatus)
-            if (setHeaderViewHolderHeightAnimator == null) {
-                val params = itemView.layoutParams
-                val height = if (isEnablePullToRefresh && (loadStatus == LoadStatus.STATUS_REFRESHING || (isWaitingHeaderViewReady && (loadStatus == LoadStatus.STATUS_NORMAL || loadStatus == LoadStatus.STATUS_NO_MORE_DATA || loadStatus == LoadStatus.STATUS_LOAD_FAILED))))
-                    headerView.getCanRefreshHeight()
-                else
-                    headerView.getViewMinHeight()
-                if (params.height != height) {
-                    params.height = height
-                    itemView.layoutParams = params
-                }
-            }
-        }
+        override fun update() = headerView.onRecyclerViewLoadStatusChanged(loadStatus)
 
     }
 
     private inner class FooterViewHolder : InternalViewHolder() {
 
-        override fun update() {
-            val params = itemView.layoutParams
-            var height = footerView.getViewMinHeight()
-            if (!isEmptyExternalAdapter()) {
-                footerView.onLoadStatusChanged(loadStatus)
-                height = if (isEnableLoadMore && (loadStatus == LoadStatus.STATUS_LOADING_MORE || loadStatus == LoadStatus.STATUS_NO_MORE_DATA || loadStatus == LoadStatus.STATUS_LOAD_FAILED))
-                    footerView.getViewMaxHeight()
-                else
-                    footerView.getViewMinHeight()
-            }
-            if (params.height != height) {
-                params.height = height
-                itemView.layoutParams = params
-            }
-        }
+        override fun update() = footerView.onRecyclerViewLoadStatusChanged(loadStatus)
 
     }
 

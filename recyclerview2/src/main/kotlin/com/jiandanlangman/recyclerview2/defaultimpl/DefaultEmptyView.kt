@@ -5,19 +5,27 @@ import android.graphics.drawable.AnimationDrawable
 import android.util.AttributeSet
 import android.view.LayoutInflater
 import android.view.View
+import android.view.ViewGroup
 import android.widget.ImageView
 import android.widget.TextView
 import androidx.constraintlayout.widget.ConstraintLayout
 import androidx.core.content.ContextCompat
-import com.jiandanlangman.recyclerview2.IEmptyView
-import com.jiandanlangman.recyclerview2.LoadStatus
-import com.jiandanlangman.recyclerview2.R
-import com.jiandanlangman.recyclerview2.RecyclerView2
+import com.jiandanlangman.recyclerview2.*
 
-class DefaultEmptyView @JvmOverloads constructor(context: Context, attrs: AttributeSet? = null, defStyleAttr: Int = 0) : ConstraintLayout(context, attrs, defStyleAttr), IEmptyView {
+class DefaultEmptyView @JvmOverloads constructor(context: Context, attrs: AttributeSet? = null, defStyleAttr: Int = 0) : ConstraintLayout(context, attrs, defStyleAttr), IActionView {
+
+
+    private val onLayoutChangeListener =
+            OnLayoutChangeListener { _, _, top, _, bottom, _, _, _, _ ->
+                onLayoutChanged(bottom - top)
+            }
 
     private val imageView: ImageView
     private val hintView: TextView
+
+
+    private lateinit var recyclerView: RecyclerView2
+
     private var loadStatus: LoadStatus? = null
     private var imageDrawable: AnimationDrawable? = null
 
@@ -27,18 +35,20 @@ class DefaultEmptyView @JvmOverloads constructor(context: Context, attrs: Attrib
         hintView = findViewById(R.id.hint)
         findViewById<View>(R.id.contentLayout).setOnClickListener {
             if (LoadStatus.STATUS_NO_MORE_DATA == loadStatus || LoadStatus.STATUS_LOAD_FAILED == loadStatus) {
-                val target = parent?.parent as? RecyclerView2
-                if (target != null) {
-                    target.setLoadStatus(LoadStatus.STATUS_REFRESHING)
-                    target.post { target.notifyLoadStatusChanged() }
-                }
+                recyclerView.setLoadStatus(LoadStatus.STATUS_REFRESHING)
+                recyclerView.notifyLoadStatusChanged()
             }
         }
     }
 
     override fun getView() = this
 
-    override fun onLoadStatusChanged(status: LoadStatus) {
+    override fun onBindToRecyclerView(recyclerView: RecyclerView2, layoutParams: ViewGroup.LayoutParams) {
+        this.recyclerView = recyclerView
+        this.layoutParams = layoutParams
+    }
+
+    override fun onRecyclerViewLoadStatusChanged(status: LoadStatus) {
         if (status != loadStatus) {
             loadStatus = status
             imageDrawable?.stop()
@@ -53,16 +63,15 @@ class DefaultEmptyView @JvmOverloads constructor(context: Context, attrs: Attrib
                     imageDrawable = ContextCompat.getDrawable(context, R.drawable.large_loading_fail_anim) as AnimationDrawable
                     imageView.setImageDrawable(imageDrawable)
                     imageDrawable!!.start()
-                    hintView.text = "加载失败，点击重新加载"
+                    hintView.text = "加载数据失败，点击刷新"
                 }
                 LoadStatus.STATUS_NO_MORE_DATA -> {
                     imageDrawable = ContextCompat.getDrawable(context, R.drawable.empty_anim) as AnimationDrawable
                     imageView.setImageDrawable(imageDrawable)
                     imageDrawable!!.start()
-                    hintView.text = "暂无数据，点击重新加载"
+                    hintView.text = "暂时没有数据，点击刷新"
                 }
                 else -> {
-                    imageDrawable = null
                     imageView.setImageBitmap(null)
                     hintView.text = ""
                 }
@@ -70,9 +79,23 @@ class DefaultEmptyView @JvmOverloads constructor(context: Context, attrs: Attrib
         }
     }
 
+    override fun onAttachedToWindow() {
+        super.onAttachedToWindow()
+        recyclerView.addOnLayoutChangeListener(onLayoutChangeListener)
+        imageDrawable?.start()
+    }
+
     override fun onDetachedFromWindow() {
         super.onDetachedFromWindow()
+        recyclerView.removeOnLayoutChangeListener(onLayoutChangeListener)
         imageDrawable?.stop()
-        imageDrawable = null
+    }
+
+    private fun onLayoutChanged(height: Int) {
+        val params = layoutParams
+        if (params.height != height) {
+            params.height = height
+            parent?.requestLayout()
+        }
     }
 }
