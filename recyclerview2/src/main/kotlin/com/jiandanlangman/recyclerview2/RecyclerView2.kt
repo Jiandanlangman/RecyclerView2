@@ -140,21 +140,26 @@ class RecyclerView2 @JvmOverloads constructor(
         val y = e.y
         if (isEnablePullToRefresh && loadStatus != LoadStatus.STATUS_REFRESHING && loadStatus != LoadStatus.STATUS_LOADING_MORE)
             when (e.action) {
-                MotionEvent.ACTION_DOWN -> isMoved = false
+                MotionEvent.ACTION_DOWN -> {
+                    touchEventPrevY = 0f
+                    isMoved = false
+                }
                 MotionEvent.ACTION_MOVE -> if (isEmptyExternalAdapter())
                     return true
                 else if (isTop()) {
                     headerView.onPullingDown(y - touchEventPrevY)
-//                    val dy = y - touchEventPrevY
-//                    if (!isMoved)
-//                        isMoved = abs(dy) >= scaledTouchSlop
-//                    if (isMoved && headerView.onPullingDown(dy)) {
-//                        touchEventPrevY = y
-//                        return true
-//                    }
+                    val dy = y - touchEventPrevY
+                    if (!isMoved)
+                        isMoved = abs(dy) >= scaledTouchSlop
+                    if (isMoved && headerView.onPullingDown(dy)) {
+                        touchEventPrevY = y
+                        return true
+                    }
                 }
-                MotionEvent.ACTION_UP, MotionEvent.ACTION_CANCEL -> if (isTop()) {
+                MotionEvent.ACTION_UP, MotionEvent.ACTION_CANCEL -> if (isMoved && isTop()) {
                     headerView.onEndPullDown()
+                    touchEventPrevY = y
+                    return true
                 }
             }
         touchEventPrevY = y
