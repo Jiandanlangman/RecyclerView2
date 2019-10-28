@@ -1,5 +1,6 @@
 package com.jiandanlangman.recyclerview2
 
+import android.annotation.SuppressLint
 import android.content.Context
 import android.util.AttributeSet
 import android.view.*
@@ -76,15 +77,48 @@ class RecyclerView2 @JvmOverloads constructor(context: Context, attrs: Attribute
     }
 
 
-    override fun dispatchTouchEvent(ev: MotionEvent): Boolean {
+//    override fun dispatchTouchEvent(ev: MotionEvent): Boolean {
+//        if (isFastScrolling) {
+//            isFastScrolling = false
+//            scroller.forceFinished(true)
+//            stopScroll()
+//        }
+//        val y = ev.y
+//        if (isEnablePullToRefresh && loadStatus != LoadStatus.STATUS_REFRESHING && loadStatus != LoadStatus.STATUS_LOADING_MORE)
+//            when (ev.action) {
+//                MotionEvent.ACTION_DOWN -> isMoved = false
+//                MotionEvent.ACTION_MOVE -> if (isEmptyExternalAdapter())
+//                    return true
+//                else if (isTop()) {
+//                    val dy = y - touchEventPrevY
+//                    if (!isMoved)
+//                        isMoved = abs(dy) >= scaledTouchSlop
+//                    if (isMoved && headerView.onPullingDown(dy)) {
+//                        touchEventPrevY = y
+//                        return true
+//                    }
+//                }
+//                MotionEvent.ACTION_UP, MotionEvent.ACTION_CANCEL -> if (isMoved && isTop()) {
+//                    headerView.onEndPullDown()
+//                    return true
+//                }
+//            }
+//        touchEventPrevY = y
+//        return super.dispatchTouchEvent(ev)
+//    }
+
+
+
+    @SuppressLint("ClickableViewAccessibility")
+    override fun onTouchEvent(e: MotionEvent): Boolean {
         if (isFastScrolling) {
             isFastScrolling = false
             scroller.forceFinished(true)
             stopScroll()
         }
-        val y = ev.y
+        val y = e.y
         if (isEnablePullToRefresh && loadStatus != LoadStatus.STATUS_REFRESHING && loadStatus != LoadStatus.STATUS_LOADING_MORE)
-            when (ev.action) {
+            when (e.action) {
                 MotionEvent.ACTION_DOWN -> isMoved = false
                 MotionEvent.ACTION_MOVE -> if (isEmptyExternalAdapter())
                     return true
@@ -103,7 +137,7 @@ class RecyclerView2 @JvmOverloads constructor(context: Context, attrs: Attribute
                 }
             }
         touchEventPrevY = y
-        return super.dispatchTouchEvent(ev)
+        return super.onTouchEvent(e)
     }
 
 
