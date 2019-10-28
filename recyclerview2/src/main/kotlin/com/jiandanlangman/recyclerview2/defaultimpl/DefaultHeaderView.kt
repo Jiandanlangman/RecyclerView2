@@ -26,15 +26,13 @@ class DefaultHeaderView @JvmOverloads constructor(context: Context, attrs: Attri
         animateHeight(viewMinHeight)
         true
     }
-    private val onLayoutChangeListener =
-            OnLayoutChangeListener { _, _, top, _, bottom, _, _, _, _ ->
+    private val onLayoutChangeListener = OnLayoutChangeListener { _, _, top, _, bottom, _, _, _, _ ->
                 onLayoutChanged(bottom - top)
             }
 
     private val imageView: ImageView
     private val imageViewHeight: Int
     private val hintView: TextView
-    private val statusList = ArrayList<LoadStatus>()
 
     private lateinit var recyclerView: RecyclerView2
 
@@ -58,6 +56,7 @@ class DefaultHeaderView @JvmOverloads constructor(context: Context, attrs: Attri
     override fun onBindToRecyclerView(recyclerView: RecyclerView2, layoutParams: ViewGroup.LayoutParams) {
         this.recyclerView = recyclerView
         this.layoutParams = layoutParams
+        layoutParams.height = viewMinHeight
     }
 
     override fun onRecyclerViewLoadStatusChanged(status: LoadStatus) {
@@ -84,10 +83,11 @@ class DefaultHeaderView @JvmOverloads constructor(context: Context, attrs: Attri
                             imageView.tag = 3
                         }
                         h.removeMessages(200)
-                        h.sendEmptyMessageDelayed(200, 800)
+                        h.sendEmptyMessageDelayed(200, 400)
                         animateHeight(showRefreshResultHeight)
-                    } else
-                        reset()
+                    }
+//                    else
+//                        reset()
                     LoadStatus.STATUS_LOAD_FAILED -> if (prevLoadStatus == LoadStatus.STATUS_REFRESHING) { //不可能是空页面失败，但是有可能是加载更多失败的
                         adapterItemCount = recyclerView.adapter!!.itemCount
                         if (2 != imageView.tag) {
@@ -97,28 +97,30 @@ class DefaultHeaderView @JvmOverloads constructor(context: Context, attrs: Attri
                             imageView.tag = 2
                         }
                         h.removeMessages(200)
-                        h.sendEmptyMessageDelayed(200, 800)
+                        h.sendEmptyMessageDelayed(200, 400)
                         animateHeight(showRefreshResultHeight)
-                    } else
-                        reset()
-                    else -> reset()
+                    }
+//                    else
+//                        reset()
+//                    else -> reset()
                 }
-            } else
-                reset()
+            }
+//            else
+//                reset()
         }
     }
 
-    private fun reset() {
-        (imageView.drawable as? AnimationDrawable)?.stop()
-        imageView.setImageBitmap(null)
-        imageView.tag = null
-        hintView.text = ""
-        val params = layoutParams
-        if (params.height != viewMinHeight) {
-            params.height = viewMinHeight
-            parent?.requestLayout()
-        }
-    }
+//    private fun reset() {
+//        (imageView.drawable as? AnimationDrawable)?.stop()
+//        imageView.setImageBitmap(null)
+//        imageView.tag = null
+//        hintView.text = ""
+//        val params = layoutParams
+//        if (params.height != viewMinHeight) {
+//            params.height = viewMinHeight
+//            parent?.requestLayout()
+//        }
+//    }
 
     override fun onPullingDown(dy: Float): Boolean {
         val params = layoutParams

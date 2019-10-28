@@ -25,7 +25,7 @@ class MainActivity : AppCompatActivity() {
 
     private fun initView() {
         val tempDatas = ArrayList<String>()
-        for(i in 0 until 100)
+        for(i in 0 until 20)
             tempDatas.add("这是一条纯文本的ITEM")
         val adapter = Adapter()
 
@@ -40,21 +40,22 @@ class MainActivity : AppCompatActivity() {
                         adapter.notifyDataSetChanged()
                         recyclerView.setLoadStatus(LoadStatus.STATUS_NORMAL)
                     } else {
-                        for (i in 0 until 100)
-                            datas.add("这是一条纯文本的ITEM")
+//                        for (i in 0 until 100)
+//                            datas.add("这是一条纯文本的ITEM")
                         adapter.notifyDataSetChanged()
-                        recyclerView.setLoadStatus(LoadStatus.STATUS_NORMAL)
+                        recyclerView.setLoadStatus(LoadStatus.STATUS_NO_MORE_DATA)
                     }
 
-                }, 2000)
+                }, 200)
         }
+        datas.addAll(tempDatas)
         recyclerView.adapter = adapter
-        recyclerView.setLoadStatus(LoadStatus.STATUS_REFRESHING)
-        recyclerView.postDelayed({
-//            datas.addAll(tempDatas)
-//            adapter.notifyDataSetChanged()
-            recyclerView.setLoadStatus(LoadStatus.STATUS_NO_MORE_DATA)
-        }, 4000)
+//        recyclerView.setLoadStatus(LoadStatus.STATUS_REFRESHING)
+//        recyclerView.postDelayed({
+////            datas.addAll(tempDatas)
+////            adapter.notifyDataSetChanged()
+//            recyclerView.setLoadStatus(LoadStatus.STATUS_NO_MORE_DATA)
+//        }, 4000)
     }
 
     private inner class ViewHolder(itemView: View) : RecyclerView.ViewHolder(itemView) {
