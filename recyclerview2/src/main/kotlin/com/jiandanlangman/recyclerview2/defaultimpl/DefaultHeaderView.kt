@@ -27,8 +27,8 @@ class DefaultHeaderView @JvmOverloads constructor(context: Context, attrs: Attri
         true
     }
     private val onLayoutChangeListener = OnLayoutChangeListener { _, _, top, _, bottom, _, _, _, _ ->
-                onLayoutChanged(bottom - top)
-            }
+        onLayoutChanged(bottom - top)
+    }
 
     private val imageView: ImageView
     private val imageViewHeight: Int
@@ -86,8 +86,6 @@ class DefaultHeaderView @JvmOverloads constructor(context: Context, attrs: Attri
                         h.sendEmptyMessageDelayed(200, 400)
                         animateHeight(showRefreshResultHeight)
                     }
-//                    else
-//                        reset()
                     LoadStatus.STATUS_LOAD_FAILED -> if (prevLoadStatus == LoadStatus.STATUS_REFRESHING) { //不可能是空页面失败，但是有可能是加载更多失败的
                         adapterItemCount = recyclerView.adapter!!.itemCount
                         if (2 != imageView.tag) {
@@ -100,27 +98,13 @@ class DefaultHeaderView @JvmOverloads constructor(context: Context, attrs: Attri
                         h.sendEmptyMessageDelayed(200, 400)
                         animateHeight(showRefreshResultHeight)
                     }
-//                    else
-//                        reset()
-//                    else -> reset()
+                    else -> {
+                    }
                 }
             }
-//            else
-//                reset()
         }
     }
 
-//    private fun reset() {
-//        (imageView.drawable as? AnimationDrawable)?.stop()
-//        imageView.setImageBitmap(null)
-//        imageView.tag = null
-//        hintView.text = ""
-//        val params = layoutParams
-//        if (params.height != viewMinHeight) {
-//            params.height = viewMinHeight
-//            parent?.requestLayout()
-//        }
-//    }
 
     override fun onPullingDown(dy: Float): Boolean {
         val params = layoutParams

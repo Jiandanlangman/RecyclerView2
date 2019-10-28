@@ -43,7 +43,6 @@ class DefaultFooterView @JvmOverloads constructor(context: Context, attrs: Attri
 
     override fun onRecyclerViewLoadStatusChanged(status: LoadStatus) {
         if (status != loadStatus) {
-            val prevLoadStatus = loadStatus
             loadStatus = status
             if (recyclerView.adapter?.itemCount ?: 0 != 0) {
                 when (loadStatus) {
@@ -53,20 +52,18 @@ class DefaultFooterView @JvmOverloads constructor(context: Context, attrs: Attri
                         hintView.visibility = View.VISIBLE
                         setViewHeight(viewMaxHeight)
                     }
-                    LoadStatus.STATUS_NO_MORE_DATA -> if (prevLoadStatus == LoadStatus.STATUS_LOADING_MORE) {
+                    LoadStatus.STATUS_NO_MORE_DATA ->  {
                         hintView.text = "没有更多了哦~"
                         progressBar.visibility = View.GONE
                         hintView.visibility = View.VISIBLE
                         setViewHeight(viewMaxHeight)
-                    } else
-                        reset()
-                    LoadStatus.STATUS_LOAD_FAILED -> if (prevLoadStatus == LoadStatus.STATUS_LOADING_MORE) {
+                    }
+                    LoadStatus.STATUS_LOAD_FAILED -> {
                         hintView.text = "加载失败，点击此处重新加载!"
                         progressBar.visibility = View.GONE
                         hintView.visibility = View.VISIBLE
                         setViewHeight(viewMaxHeight)
-                    } else
-                        reset()
+                    }
                     else -> reset()
                 }
             } else reset()

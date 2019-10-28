@@ -203,27 +203,27 @@ class RecyclerView2 @JvmOverloads constructor(context: Context, attrs: Attribute
     }
 
     fun setEmptyView(emptyView: IActionView) {
-//        val oldEmptyView = this.emptyView.getView()
-//        if (oldEmptyView.parent != null)
-//            (oldEmptyView.parent as ViewGroup).removeView(oldEmptyView)
-//        this.emptyView = emptyView
-//        internalAdapter.notifyItemChanged(0, INTERNAL_PAYLOAD)
+        val oldEmptyView = this.emptyView.getView()
+        if (oldEmptyView.parent != null)
+            (oldEmptyView.parent as ViewGroup).removeView(oldEmptyView)
+        this.emptyView = emptyView
+        emptyView.onBindToRecyclerView(this, emptyViewLayoutParams)
     }
 
     fun setHeaderView(headerView: IHeaderView) {
-//        val oldHeaderView = this.headerView.getView()
-//        if (oldHeaderView.parent != null)
-//            (oldHeaderView.parent as ViewGroup).removeView(oldHeaderView)
-//        this.headerView = headerView
-//        internalAdapter.notifyItemChanged(0, INTERNAL_PAYLOAD)
+        val oldHeaderView = this.headerView.getView()
+        if (oldHeaderView.parent != null)
+            (oldHeaderView.parent as ViewGroup).removeView(oldHeaderView)
+        this.headerView = headerView
+        headerView.onBindToRecyclerView(this, headerViewLayoutParams)
     }
 
     fun setFooterView(footerView: IActionView) {
-//        val oldFooterView = this.footerView.getView()
-//        if (oldFooterView.parent != null)
-//            (oldFooterView.parent as ViewGroup).removeView(oldFooterView)
-//        this.footerView = footerView
-//        internalAdapter.notifyItemChanged(internalAdapter.itemCount - 1, INTERNAL_PAYLOAD)
+        val oldFooterView = this.footerView.getView()
+        if (oldFooterView.parent != null)
+            (oldFooterView.parent as ViewGroup).removeView(oldFooterView)
+        this.footerView = footerView
+        footerView.onBindToRecyclerView(this, footerViewLayoutParams)
     }
 
     fun setFastScrollToTopCompleteListener(listener: () -> Unit) {
