@@ -1,6 +1,5 @@
 package com.jiandanlangman.recyclerview2
 
-import android.annotation.SuppressLint
 import android.content.Context
 import android.util.AttributeSet
 import android.view.*
@@ -15,12 +14,9 @@ import com.jiandanlangman.recyclerview2.defaultimpl.DefaultEmptyView
 import com.jiandanlangman.recyclerview2.defaultimpl.DefaultFooterView
 import com.jiandanlangman.recyclerview2.defaultimpl.DefaultHeaderView
 import java.lang.Exception
+import kotlin.math.abs
 
-class RecyclerView2 @JvmOverloads constructor(
-    context: Context,
-    attrs: AttributeSet? = null,
-    defStyleAttr: Int = 0
-) : RecyclerView(context, attrs, defStyleAttr) {
+class RecyclerView2 @JvmOverloads constructor(context: Context, attrs: AttributeSet? = null, defStyleAttr: Int = 0) : RecyclerView(context, attrs, defStyleAttr) {
 
     private companion object {
         private const val ITEM_VIEW_TYPE_EMPTY = Int.MIN_VALUE
@@ -30,20 +26,12 @@ class RecyclerView2 @JvmOverloads constructor(
         private const val FAST_SCROLL_TO_TOP_DEFAULT_DURATION = 0
     }
 
+    private val scaledTouchSlop = ViewConfiguration.get(context).scaledTouchSlop
     private val internalAdapter = InternalAdapter()
     private val externalAdapterDataObserver: AdapterDataObserver
-    private val emptyViewLayoutParams = ConstraintLayout.LayoutParams(
-        ConstraintLayout.LayoutParams.MATCH_PARENT,
-        ConstraintLayout.LayoutParams.MATCH_PARENT
-    )
-    private val headerViewLayoutParams = ConstraintLayout.LayoutParams(
-        ConstraintLayout.LayoutParams.MATCH_PARENT,
-        ConstraintLayout.LayoutParams.WRAP_CONTENT
-    )
-    private val footerViewLayoutParams = ConstraintLayout.LayoutParams(
-        ConstraintLayout.LayoutParams.MATCH_PARENT,
-        ConstraintLayout.LayoutParams.WRAP_CONTENT
-    )
+    private val emptyViewLayoutParams = ConstraintLayout.LayoutParams(ConstraintLayout.LayoutParams.MATCH_PARENT, ConstraintLayout.LayoutParams.MATCH_PARENT)
+    private val headerViewLayoutParams = ConstraintLayout.LayoutParams(ConstraintLayout.LayoutParams.MATCH_PARENT, ConstraintLayout.LayoutParams.WRAP_CONTENT)
+    private val footerViewLayoutParams = ConstraintLayout.LayoutParams(ConstraintLayout.LayoutParams.MATCH_PARENT, ConstraintLayout.LayoutParams.WRAP_CONTENT)
     private val scroller = Scroller(context, AccelerateDecelerateInterpolator())
 
     private var onLoadStatusChangedListener: (LoadStatus) -> Unit = {}
@@ -68,20 +56,11 @@ class RecyclerView2 @JvmOverloads constructor(
         super.setAdapter(internalAdapter)
         externalAdapterDataObserver = object : AdapterDataObserver() {
             override fun onChanged() = internalAdapter.notifyDataSetChanged()
-            override fun onItemRangeRemoved(positionStart: Int, itemCount: Int) =
-                internalAdapter.notifyItemRangeRemoved(positionStart + 1, itemCount)
-
-            override fun onItemRangeMoved(fromPosition: Int, toPosition: Int, itemCount: Int) =
-                internalAdapter.notifyItemMoved(fromPosition + 1, toPosition + 1) //TODO 这里似乎有点问题
-
-            override fun onItemRangeInserted(positionStart: Int, itemCount: Int) =
-                internalAdapter.notifyItemRangeInserted(positionStart + 1, itemCount)
-
-            override fun onItemRangeChanged(positionStart: Int, itemCount: Int) =
-                internalAdapter.notifyItemRangeChanged(positionStart + 1, itemCount)
-
-            override fun onItemRangeChanged(positionStart: Int, itemCount: Int, payload: Any?) =
-                internalAdapter.notifyItemRangeChanged(positionStart + 1, itemCount, payload)
+            override fun onItemRangeRemoved(positionStart: Int, itemCount: Int) = internalAdapter.notifyItemRangeRemoved(positionStart + 1, itemCount)
+            override fun onItemRangeMoved(fromPosition: Int, toPosition: Int, itemCount: Int) = internalAdapter.notifyItemMoved(fromPosition + 1, toPosition + 1) //TODO 这里似乎有点问题
+            override fun onItemRangeInserted(positionStart: Int, itemCount: Int) = internalAdapter.notifyItemRangeInserted(positionStart + 1, itemCount)
+            override fun onItemRangeChanged(positionStart: Int, itemCount: Int) = internalAdapter.notifyItemRangeChanged(positionStart + 1, itemCount)
+            override fun onItemRangeChanged(positionStart: Int, itemCount: Int, payload: Any?) = internalAdapter.notifyItemRangeChanged(positionStart + 1, itemCount, payload)
         }
         headerViewLayoutParams.bottomToBottom = ConstraintLayout.LayoutParams.PARENT_ID
         emptyView.onBindToRecyclerView(this, emptyViewLayoutParams)
@@ -104,31 +83,30 @@ class RecyclerView2 @JvmOverloads constructor(
         }
         if (ev.action == MotionEvent.ACTION_MOVE && isEmptyExternalAdapter())
             return true
-        return super.dispatchTouchEvent(ev)
-    }
-
-    @SuppressLint("ClickableViewAccessibility")
-    override fun onTouchEvent(e: MotionEvent): Boolean {
-        val y = e.y
+        val y = ev.y
         if (isEnablePullToRefresh && loadStatus != LoadStatus.STATUS_REFRESHING && loadStatus != LoadStatus.STATUS_LOADING_MORE)
-            when (e.action) {
+            when (ev.action) {
                 MotionEvent.ACTION_DOWN -> {
                     touchEventPrevY = 0f
                     isMoved = false
                 }
-                MotionEvent.ACTION_MOVE -> if (isTop() && headerView.onPullingDown(y - touchEventPrevY)) {
-                    isMoved = true
-                    touchEventPrevY = y
-                    return true
+                MotionEvent.ACTION_MOVE -> if (isTop()) {
+                    val dy = y - touchEventPrevY
+                    if (!isMoved)
+                        isMoved = abs(dy) >= scaledTouchSlop
+                    if (isMoved && headerView.onPullingDown(dy)) {
+                        touchEventPrevY = y
+                        ev.action = MotionEvent.ACTION_CANCEL
+                    }
                 }
                 MotionEvent.ACTION_UP, MotionEvent.ACTION_CANCEL -> if (isMoved && isTop()) {
                     headerView.onEndPullDown()
                     touchEventPrevY = y
-                    return true
+                    ev.action = MotionEvent.ACTION_CANCEL
                 }
             }
         touchEventPrevY = y
-        return super.onTouchEvent(e)
+        return super.dispatchTouchEvent(ev)
     }
 
 
@@ -151,11 +129,7 @@ class RecyclerView2 @JvmOverloads constructor(
             val spanCount = layout.spanCount
             val externalSpanSizeLookup = layout.spanSizeLookup
             layout.spanSizeLookup = object : GridLayoutManager.SpanSizeLookup() {
-                override fun getSpanSize(position: Int) =
-                    if (internalAdapter.getItemViewType(position) == ITEM_VIEW_TYPE_EMPTY || internalAdapter.getItemViewType(
-                            position
-                        ) == ITEM_VIEW_TYPE_HEADER || internalAdapter.getItemViewType(position) == ITEM_VIEW_TYPE_FOOTER
-                    ) spanCount else externalSpanSizeLookup?.getSpanSize(position)
+                override fun getSpanSize(position: Int) = if (internalAdapter.getItemViewType(position) == ITEM_VIEW_TYPE_EMPTY || internalAdapter.getItemViewType(position) == ITEM_VIEW_TYPE_HEADER || internalAdapter.getItemViewType(position) == ITEM_VIEW_TYPE_FOOTER) spanCount else externalSpanSizeLookup?.getSpanSize(position)
                         ?: 1
             }
             super.setLayoutManager(layout)
@@ -179,13 +153,10 @@ class RecyclerView2 @JvmOverloads constructor(
         super.onScrolled(dx, dy)
         if (isEnableLoadMore && dy > 0 && loadStatus != LoadStatus.STATUS_REFRESHING && loadStatus != LoadStatus.STATUS_LOADING_MORE && loadStatus != LoadStatus.STATUS_NO_MORE_DATA && !isEmptyExternalAdapter()) {
             val lm = layoutManager
-            val lastCompletelyVisibleItemPosition =
-                if (lm is LinearLayoutManager) lm.findLastCompletelyVisibleItemPosition() else {
-                    (lm as StaggeredGridLayoutManager).findLastCompletelyVisibleItemPositions(
-                        staggeredGridLayoutManagerLastVisiblePositions
-                    )
-                    staggeredGridLayoutManagerLastVisiblePositions?.max() ?: -1
-                }
+            val lastCompletelyVisibleItemPosition = if (lm is LinearLayoutManager) lm.findLastCompletelyVisibleItemPosition() else {
+                (lm as StaggeredGridLayoutManager).findLastCompletelyVisibleItemPositions(staggeredGridLayoutManagerLastVisiblePositions)
+                staggeredGridLayoutManagerLastVisiblePositions?.max() ?: -1
+            }
             if (lastCompletelyVisibleItemPosition >= internalAdapter.itemCount - 1 - preloadOffset) {
                 loadStatus = LoadStatus.STATUS_LOADING_MORE
                 if (isBottom())
@@ -296,15 +267,9 @@ class RecyclerView2 @JvmOverloads constructor(
             else -> externalAdapter!!.getItemId(position - 1)
         }
 
-        override fun onFailedToRecycleView(holder: ViewHolder) =
-            if (holder is InternalViewHolder) super.onFailedToRecycleView(holder) else externalAdapter!!.onFailedToRecycleView(
-                holder
-            )
+        override fun onFailedToRecycleView(holder: ViewHolder) = if (holder is InternalViewHolder) super.onFailedToRecycleView(holder) else externalAdapter!!.onFailedToRecycleView(holder)
 
-        override fun onViewRecycled(holder: ViewHolder) =
-            if (holder is InternalViewHolder) super.onViewRecycled(holder) else externalAdapter!!.onViewRecycled(
-                holder
-            )
+        override fun onViewRecycled(holder: ViewHolder) = if (holder is InternalViewHolder) super.onViewRecycled(holder) else externalAdapter!!.onViewRecycled(holder)
 
         override fun onCreateViewHolder(parent: ViewGroup, viewType: Int) = when (viewType) {
             ITEM_VIEW_TYPE_EMPTY -> EmptyViewHolder()
@@ -313,22 +278,16 @@ class RecyclerView2 @JvmOverloads constructor(
             else -> externalAdapter!!.onCreateViewHolder(parent, viewType)
         }
 
-        override fun getItemCount() =
-            if (externalAdapter == null) 0 else externalAdapter!!.itemCount + 2
+        override fun getItemCount() = if (externalAdapter == null) 0 else externalAdapter!!.itemCount + 2
 
-        override fun onBindViewHolder(
-            holder: ViewHolder,
-            position: Int,
-            payloads: MutableList<Any>
-        ) {
+        override fun onBindViewHolder(holder: ViewHolder, position: Int, payloads: MutableList<Any>) {
             when (holder) {
                 is InternalViewHolder -> holder.update()
                 else -> super.onBindViewHolder(holder, position, payloads)
             }
         }
 
-        override fun onBindViewHolder(holder: ViewHolder, position: Int) =
-            externalAdapter!!.onBindViewHolder(holder, position - 1)
+        override fun onBindViewHolder(holder: ViewHolder, position: Int) = externalAdapter!!.onBindViewHolder(holder, position - 1)
 
         override fun onViewAttachedToWindow(holder: ViewHolder) {
             super.onViewAttachedToWindow(holder)
@@ -342,8 +301,7 @@ class RecyclerView2 @JvmOverloads constructor(
                     (view.parent as ViewGroup).removeView(view)
                 (holder.itemView as ConstraintLayout).addView(view)
                 if (layoutManager is StaggeredGridLayoutManager)
-                    (holder.itemView.layoutParams as StaggeredGridLayoutManager.LayoutParams).isFullSpan =
-                        true
+                    (holder.itemView.layoutParams as StaggeredGridLayoutManager.LayoutParams).isFullSpan = true
             } else
                 externalAdapter!!.onViewAttachedToWindow(holder)
         }
@@ -372,8 +330,7 @@ class RecyclerView2 @JvmOverloads constructor(
     private abstract inner class InternalViewHolder : ViewHolder(ConstraintLayout(context)) {
 
         init {
-            itemView.layoutParams =
-                LayoutParams(LayoutParams.MATCH_PARENT, LayoutParams.WRAP_CONTENT)
+            itemView.layoutParams = LayoutParams(LayoutParams.MATCH_PARENT, LayoutParams.WRAP_CONTENT)
         }
 
         abstract fun update()

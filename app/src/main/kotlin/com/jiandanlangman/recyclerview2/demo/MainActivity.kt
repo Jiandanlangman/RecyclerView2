@@ -7,6 +7,7 @@ import android.view.LayoutInflater
 import android.view.View
 import android.view.ViewGroup
 import android.widget.TextView
+import android.widget.Toast
 import androidx.recyclerview.widget.GridLayoutManager
 import androidx.recyclerview.widget.RecyclerView
 import androidx.recyclerview.widget.StaggeredGridLayoutManager
@@ -25,7 +26,7 @@ class MainActivity : AppCompatActivity() {
 
     private fun initView() {
         val tempDatas = ArrayList<String>()
-        for(i in 0 until 20)
+        for(i in 0 until 100)
             tempDatas.add("这是一条纯文本的ITEM")
         val adapter = Adapter()
 
@@ -60,6 +61,13 @@ class MainActivity : AppCompatActivity() {
 
     private inner class ViewHolder(itemView: View) : RecyclerView.ViewHolder(itemView) {
         val textView = itemView as TextView
+
+        init {
+            textView.setOnClickListener {
+                Toast.makeText(this@MainActivity, "onItemClick", Toast.LENGTH_SHORT).show()
+            }
+        }
+
     }
 
     private inner class Adapter:RecyclerView.Adapter<ViewHolder>() {
