@@ -7,7 +7,7 @@ import android.os.Handler
 import android.util.AttributeSet
 import android.view.LayoutInflater
 import android.view.ViewGroup
-import android.view.animation.DecelerateInterpolator
+import android.view.animation.LinearInterpolator
 import android.widget.ImageView
 import android.widget.TextView
 import androidx.constraintlayout.widget.ConstraintLayout
@@ -34,6 +34,7 @@ class DefaultHeaderView @JvmOverloads constructor(context: Context, attrs: Attri
     private val imageView: ImageView
     private val imageViewHeight: Int
     private val hintView: TextView
+    private val statusList = ArrayList<LoadStatus>()
 
     private lateinit var recyclerView: RecyclerView2
 
@@ -152,7 +153,6 @@ class DefaultHeaderView @JvmOverloads constructor(context: Context, attrs: Attri
         if (canRefreshStatus == 1) {
             recyclerView.setLoadStatus(LoadStatus.STATUS_REFRESHING)
             recyclerView.notifyLoadStatusChanged()
-            animateHeight(canRefreshHeight)
         } else
             animateHeight(viewMinHeight)
         canRefreshStatus = -1
@@ -161,16 +161,15 @@ class DefaultHeaderView @JvmOverloads constructor(context: Context, attrs: Attri
 
     private fun animateHeight(height: Int) {
         heightAnimator?.cancel()
+        heightAnimator = null
         if (height != layoutParams.height) {
             heightAnimator = ValueAnimator.ofInt(layoutParams.height, height)
             heightAnimator!!.duration = 200
-            heightAnimator!!.interpolator = DecelerateInterpolator()
+            heightAnimator!!.interpolator = LinearInterpolator()
             heightAnimator!!.addUpdateListener {
                 val animatedValue = it.animatedValue as Int
                 layoutParams.height = animatedValue
                 parent?.requestLayout()
-                if (animatedValue == height)
-                    heightAnimator = null
             }
             heightAnimator!!.start()
         }
