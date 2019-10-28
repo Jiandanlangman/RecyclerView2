@@ -13,8 +13,6 @@ import com.jiandanlangman.recyclerview2.*
 class DefaultFooterView @JvmOverloads constructor(context: Context, attrs: AttributeSet? = null, defStyleAttr: Int = 0) : ConstraintLayout(context, attrs, defStyleAttr), IActionView {
 
 
-    private val viewMaxHeight = (resources.displayMetrics.density * 36 + .5f).toInt()
-    private val viewMinHeight = 1
     private val progressBar: ProgressBar
     private val hintView: TextView
 
@@ -50,33 +48,28 @@ class DefaultFooterView @JvmOverloads constructor(context: Context, attrs: Attri
                         hintView.text = "正在加载数据，请稍后..."
                         progressBar.visibility = View.VISIBLE
                         hintView.visibility = View.VISIBLE
-                        setViewHeight(viewMaxHeight)
                     }
                     LoadStatus.STATUS_NO_MORE_DATA ->  {
                         hintView.text = "没有更多了哦~"
                         progressBar.visibility = View.GONE
                         hintView.visibility = View.VISIBLE
-                        setViewHeight(viewMaxHeight)
                     }
                     LoadStatus.STATUS_LOAD_FAILED -> {
                         hintView.text = "加载失败，点击此处重新加载!"
                         progressBar.visibility = View.GONE
                         hintView.visibility = View.VISIBLE
-                        setViewHeight(viewMaxHeight)
                     }
-                    else -> reset()
+                    else -> {
+                        hintView.text = ""
+                        progressBar.visibility = View.GONE
+                        hintView.visibility = View.GONE
+                    }
                 }
-            } else reset()
-        }
-    }
-
-    private fun reset() = setViewHeight(viewMinHeight)
-
-    private fun setViewHeight(height: Int) {
-        val params = layoutParams
-        if (params.height != height) {
-            params.height = height
-            parent?.requestLayout()
+            } else {
+                hintView.text = ""
+                progressBar.visibility = View.GONE
+                hintView.visibility = View.GONE
+            }
         }
     }
 
