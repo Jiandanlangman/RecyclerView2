@@ -15,7 +15,6 @@ import com.jiandanlangman.recyclerview2.defaultimpl.DefaultEmptyView
 import com.jiandanlangman.recyclerview2.defaultimpl.DefaultFooterView
 import com.jiandanlangman.recyclerview2.defaultimpl.DefaultHeaderView
 import java.lang.Exception
-import kotlin.math.abs
 
 class RecyclerView2 @JvmOverloads constructor(
     context: Context,
@@ -31,7 +30,6 @@ class RecyclerView2 @JvmOverloads constructor(
         private const val FAST_SCROLL_TO_TOP_DEFAULT_DURATION = 0
     }
 
-    private val scaledTouchSlop = ViewConfiguration.get(context).scaledTouchSlop / 2
     private val internalAdapter = InternalAdapter()
     private val externalAdapterDataObserver: AdapterDataObserver
     private val emptyViewLayoutParams = ConstraintLayout.LayoutParams(
@@ -98,45 +96,19 @@ class RecyclerView2 @JvmOverloads constructor(
         }
     }
 
-
-//    override fun dispatchTouchEvent(ev: MotionEvent): Boolean {
-//        if (isFastScrolling) {
-//            isFastScrolling = false
-//            scroller.forceFinished(true)
-//            stopScroll()
-//        }
-//        val y = ev.y
-//        if (isEnablePullToRefresh && loadStatus != LoadStatus.STATUS_REFRESHING && loadStatus != LoadStatus.STATUS_LOADING_MORE)
-//            when (ev.action) {
-//                MotionEvent.ACTION_DOWN -> isMoved = false
-//                MotionEvent.ACTION_MOVE -> if (isEmptyExternalAdapter())
-//                    return true
-//                else if (isTop()) {
-//                    val dy = y - touchEventPrevY
-//                    if (!isMoved)
-//                        isMoved = abs(dy) >= scaledTouchSlop
-//                    if (isMoved && headerView.onPullingDown(dy)) {
-//                        touchEventPrevY = y
-//                        return true
-//                    }
-//                }
-//                MotionEvent.ACTION_UP, MotionEvent.ACTION_CANCEL -> if (isMoved && isTop()) {
-//                    headerView.onEndPullDown()
-//                    return true
-//                }
-//            }
-//        touchEventPrevY = y
-//        return super.dispatchTouchEvent(ev)
-//    }
-
-
-    @SuppressLint("ClickableViewAccessibility")
-    override fun onTouchEvent(e: MotionEvent): Boolean {
+    override fun dispatchTouchEvent(ev: MotionEvent): Boolean {
         if (isFastScrolling) {
             isFastScrolling = false
             scroller.forceFinished(true)
             stopScroll()
         }
+        if (ev.action == MotionEvent.ACTION_MOVE && isEmptyExternalAdapter())
+            return true
+        return super.dispatchTouchEvent(ev)
+    }
+
+    @SuppressLint("ClickableViewAccessibility")
+    override fun onTouchEvent(e: MotionEvent): Boolean {
         val y = e.y
         if (isEnablePullToRefresh && loadStatus != LoadStatus.STATUS_REFRESHING && loadStatus != LoadStatus.STATUS_LOADING_MORE)
             when (e.action) {
@@ -144,17 +116,10 @@ class RecyclerView2 @JvmOverloads constructor(
                     touchEventPrevY = 0f
                     isMoved = false
                 }
-                MotionEvent.ACTION_MOVE -> if (isEmptyExternalAdapter())
+                MotionEvent.ACTION_MOVE -> if (isTop() && headerView.onPullingDown(y - touchEventPrevY)) {
+                    isMoved = true
+                    touchEventPrevY = y
                     return true
-                else if (isTop()) {
-                    headerView.onPullingDown(y - touchEventPrevY)
-                    val dy = y - touchEventPrevY
-                    if (!isMoved)
-                        isMoved = abs(dy) >= scaledTouchSlop
-                    if (isMoved && headerView.onPullingDown(dy)) {
-                        touchEventPrevY = y
-                        return true
-                    }
                 }
                 MotionEvent.ACTION_UP, MotionEvent.ACTION_CANCEL -> if (isMoved && isTop()) {
                     headerView.onEndPullDown()
