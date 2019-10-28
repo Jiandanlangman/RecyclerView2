@@ -99,48 +99,15 @@ class RecyclerView2 @JvmOverloads constructor(
     }
 
 
-    override fun dispatchTouchEvent(ev: MotionEvent): Boolean {
-        if (isFastScrolling) {
-            isFastScrolling = false
-            scroller.forceFinished(true)
-            stopScroll()
-        }
-        val y = ev.y
-        if (isEnablePullToRefresh && loadStatus != LoadStatus.STATUS_REFRESHING && loadStatus != LoadStatus.STATUS_LOADING_MORE)
-            when (ev.action) {
-                MotionEvent.ACTION_DOWN -> isMoved = false
-                MotionEvent.ACTION_MOVE -> if (isEmptyExternalAdapter())
-                    return true
-                else if (isTop()) {
-                    headerView.onPullingDown(y - touchEventPrevY)
-//                    val dy = y - touchEventPrevY
-//                    if (!isMoved)
-//                        isMoved = abs(dy) >= scaledTouchSlop
-//                    if (isMoved && headerView.onPullingDown(dy)) {
-//                        touchEventPrevY = y
-//                        return true
-//                    }
-                }
-                MotionEvent.ACTION_UP, MotionEvent.ACTION_CANCEL -> if ( isTop()) {
-                    headerView.onEndPullDown()
-//                    return true
-                }
-            }
-        touchEventPrevY = y
-        return super.dispatchTouchEvent(ev)
-    }
-
-
-//    @SuppressLint("ClickableViewAccessibility")
-//    override fun onTouchEvent(e: MotionEvent): Boolean {
+//    override fun dispatchTouchEvent(ev: MotionEvent): Boolean {
 //        if (isFastScrolling) {
 //            isFastScrolling = false
 //            scroller.forceFinished(true)
 //            stopScroll()
 //        }
-//        val y = e.y
+//        val y = ev.y
 //        if (isEnablePullToRefresh && loadStatus != LoadStatus.STATUS_REFRESHING && loadStatus != LoadStatus.STATUS_LOADING_MORE)
-//            when (e.action) {
+//            when (ev.action) {
 //                MotionEvent.ACTION_DOWN -> isMoved = false
 //                MotionEvent.ACTION_MOVE -> if (isEmptyExternalAdapter())
 //                    return true
@@ -159,8 +126,40 @@ class RecyclerView2 @JvmOverloads constructor(
 //                }
 //            }
 //        touchEventPrevY = y
-//        return super.onTouchEvent(e)
+//        return super.dispatchTouchEvent(ev)
 //    }
+
+
+    @SuppressLint("ClickableViewAccessibility")
+    override fun onTouchEvent(e: MotionEvent): Boolean {
+        if (isFastScrolling) {
+            isFastScrolling = false
+            scroller.forceFinished(true)
+            stopScroll()
+        }
+        val y = e.y
+        if (isEnablePullToRefresh && loadStatus != LoadStatus.STATUS_REFRESHING && loadStatus != LoadStatus.STATUS_LOADING_MORE)
+            when (e.action) {
+                MotionEvent.ACTION_DOWN -> isMoved = false
+                MotionEvent.ACTION_MOVE -> if (isEmptyExternalAdapter())
+                    return true
+                else if (isTop()) {
+                    headerView.onPullingDown(y - touchEventPrevY)
+//                    val dy = y - touchEventPrevY
+//                    if (!isMoved)
+//                        isMoved = abs(dy) >= scaledTouchSlop
+//                    if (isMoved && headerView.onPullingDown(dy)) {
+//                        touchEventPrevY = y
+//                        return true
+//                    }
+                }
+                MotionEvent.ACTION_UP, MotionEvent.ACTION_CANCEL -> if (isTop()) {
+                    headerView.onEndPullDown()
+                }
+            }
+        touchEventPrevY = y
+        return super.onTouchEvent(e)
+    }
 
 
     override fun setAdapter(adapter: Adapter<*>?) {

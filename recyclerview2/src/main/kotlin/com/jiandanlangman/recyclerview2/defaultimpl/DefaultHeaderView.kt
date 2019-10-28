@@ -124,7 +124,8 @@ class DefaultHeaderView @JvmOverloads constructor(context: Context, attrs: Attri
                 h = viewMaxHeight
             }
             params.height = h
-            parent?.requestLayout()
+            (parent as? ViewGroup)?.layoutParams = (parent as? ViewGroup)?.layoutParams
+//            parent?.requestLayout()
             val status = if (h >= canRefreshHeight) 1 else 0
             if (status != canRefreshStatus) {
                 canRefreshStatus = status
@@ -155,7 +156,8 @@ class DefaultHeaderView @JvmOverloads constructor(context: Context, attrs: Attri
             heightAnimator!!.addUpdateListener {
                 val animatedValue = it.animatedValue as Int
                 layoutParams.height = animatedValue
-                parent?.requestLayout()
+                (parent as? ViewGroup)?.layoutParams = (parent as? ViewGroup)?.layoutParams
+//                parent?.requestLayout()
             }
             heightAnimator!!.start()
         }
