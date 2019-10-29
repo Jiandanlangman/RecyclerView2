@@ -34,10 +34,8 @@ class DefaultEmptyView @JvmOverloads constructor(context: Context, attrs: Attrib
         imageView = findViewById(R.id.image)
         hintView = findViewById(R.id.hint)
         findViewById<View>(R.id.contentLayout).setOnClickListener {
-            if (LoadStatus.STATUS_NO_MORE_DATA == loadStatus || LoadStatus.STATUS_LOAD_FAILED == loadStatus) {
-                recyclerView.setLoadStatus(LoadStatus.STATUS_REFRESHING)
-                recyclerView.notifyLoadStatusChanged()
-            }
+            if (LoadStatus.STATUS_NO_MORE_DATA == loadStatus || LoadStatus.STATUS_LOAD_FAILED == loadStatus)
+                recyclerView.setLoadStatus(LoadStatus.STATUS_REFRESHING, true)
         }
     }
 

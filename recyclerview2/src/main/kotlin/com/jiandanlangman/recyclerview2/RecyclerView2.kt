@@ -1,6 +1,8 @@
 package com.jiandanlangman.recyclerview2
 
 import android.content.Context
+import android.graphics.Canvas
+import android.graphics.Rect
 import android.util.AttributeSet
 import android.view.*
 import android.view.animation.AccelerateDecelerateInterpolator
@@ -33,6 +35,9 @@ class RecyclerView2 @JvmOverloads constructor(context: Context, attrs: Attribute
     private val headerViewLayoutParams = ConstraintLayout.LayoutParams(ConstraintLayout.LayoutParams.MATCH_PARENT, ConstraintLayout.LayoutParams.WRAP_CONTENT)
     private val footerViewLayoutParams = ConstraintLayout.LayoutParams(ConstraintLayout.LayoutParams.MATCH_PARENT, ConstraintLayout.LayoutParams.WRAP_CONTENT)
     private val scroller = Scroller(context, AccelerateDecelerateInterpolator())
+    private val headerViewPadding = Rect()
+    private val footerViewPadding = Rect()
+    private val itemDecorations = HashMap<ItemDecoration, ItemDecoration>()
 
     private var onLoadStatusChangedListener: (LoadStatus) -> Unit = {}
     private var loadStatus = LoadStatus.STATUS_NORMAL
@@ -66,6 +71,15 @@ class RecyclerView2 @JvmOverloads constructor(context: Context, attrs: Attribute
         emptyView.onBindToRecyclerView(this, emptyViewLayoutParams)
         headerView.onBindToRecyclerView(this, headerViewLayoutParams)
         footerView.onBindToRecyclerView(this, footerViewLayoutParams)
+        super.addItemDecoration(object : ItemDecoration() {
+            override fun getItemOffsets(outRect: Rect, view: View, parent: RecyclerView, state: State) {
+                val position = getChildAdapterPosition(view)
+                if (position == 0)
+                    outRect.set(headerViewPadding)
+                else if (position == internalAdapter.itemCount - 1)
+                    outRect.set(footerViewPadding)
+            }
+        })
         try {
             val field = this::class.java.superclass!!.getDeclaredField("mMaxFlingVelocity")
             field.isAccessible = true
@@ -81,7 +95,7 @@ class RecyclerView2 @JvmOverloads constructor(context: Context, attrs: Attribute
             scroller.forceFinished(true)
             stopScroll()
         }
-        if (ev.action == MotionEvent.ACTION_MOVE && isEmptyExternalAdapter())
+        if (ev.action == MotionEvent.ACTION_MOVE && (isEmptyExternalAdapter() || !hasWindowFocus()))
             return true
         val y = ev.y
         if (isEnablePullToRefresh && loadStatus != LoadStatus.STATUS_REFRESHING && loadStatus != LoadStatus.STATUS_LOADING_MORE)
@@ -148,6 +162,28 @@ class RecyclerView2 @JvmOverloads constructor(context: Context, attrs: Attribute
         else -> throw RuntimeException("Only LinearLayoutManager, GridLayoutManager, StaggeredGridLayoutManager can be set, and the direction must be RecyclerView.VERTICAL")
     }
 
+    override fun addItemDecoration(decor: ItemDecoration, index: Int) {
+        val newDecor = object : RecyclerView.ItemDecoration() {
+            override fun onDrawOver(c: Canvas, parent: RecyclerView) = Unit
+            override fun onDraw(c: Canvas, parent: RecyclerView) = Unit
+            override fun getItemOffsets(outRect: Rect, itemPosition: Int, parent: RecyclerView) = Unit
+            override fun onDrawOver(c: Canvas, parent: RecyclerView, state: State) = decor.onDrawOver(c, parent, state)
+            override fun onDraw(c: Canvas, parent: RecyclerView, state: State) = decor.onDraw(c, parent, state)
+            override fun getItemOffsets(outRect: Rect, view: View, parent: RecyclerView, state: State) {
+                val position = parent.getChildAdapterPosition(view)
+                if (position != 0 && position != internalAdapter.itemCount - 1)
+                    decor.getItemOffsets(outRect, view, parent, state)
+            }
+        }
+        super.addItemDecoration(newDecor, index)
+        itemDecorations[decor] = newDecor
+    }
+
+    override fun removeItemDecoration(decor: ItemDecoration) {
+        val newDecor = itemDecorations[decor]
+        if (newDecor != null)
+            super.removeItemDecoration(newDecor)
+    }
 
     override fun onScrolled(dx: Int, dy: Int) {
         super.onScrolled(dx, dy)
@@ -157,12 +193,8 @@ class RecyclerView2 @JvmOverloads constructor(context: Context, attrs: Attribute
                 (lm as StaggeredGridLayoutManager).findLastCompletelyVisibleItemPositions(staggeredGridLayoutManagerLastVisiblePositions)
                 staggeredGridLayoutManagerLastVisiblePositions?.max() ?: -1
             }
-            if (lastCompletelyVisibleItemPosition >= internalAdapter.itemCount - 1 - preloadOffset) {
-                loadStatus = LoadStatus.STATUS_LOADING_MORE
-                if (isBottom())
-                    footerView.onRecyclerViewLoadStatusChanged(loadStatus)
-                notifyLoadStatusChanged()
-            }
+            if (lastCompletelyVisibleItemPosition >= internalAdapter.itemCount - 1 - preloadOffset)
+                setLoadStatus(LoadStatus.STATUS_LOADING_MORE, true)
         }
     }
 
@@ -184,13 +216,14 @@ class RecyclerView2 @JvmOverloads constructor(context: Context, attrs: Attribute
 
     fun setLoadStatus(status: LoadStatus) {
         if (loadStatus != status) {
-            loadStatus = status
-            emptyView.onRecyclerViewLoadStatusChanged(status)
-            headerView.onRecyclerViewLoadStatusChanged(status)
-            footerView.onRecyclerViewLoadStatusChanged(status)
-            post { autoLoadMore() }
+            setLoadStatus(status, false)
+            post {
+                if (isEnableLoadMore && loadStatus == LoadStatus.STATUS_NORMAL && isBottom() && !isEmptyExternalAdapter())
+                    setLoadStatus(LoadStatus.STATUS_LOADING_MORE, true)
+            }
         }
     }
+
 
     fun setPreloadOffset(offset: Int) {
         preloadOffset = offset
@@ -242,23 +275,31 @@ class RecyclerView2 @JvmOverloads constructor(context: Context, attrs: Attribute
 
     fun fastScrollToTop() = fastScrollToTop(FAST_SCROLL_TO_TOP_DEFAULT_DURATION)
 
+    fun setHeaderViewPadding(left: Int, top: Int, right: Int, bottom: Int) {
+        headerViewPadding.set(left, top, right, bottom)
+        internalAdapter.notifyItemChanged(0)
+    }
 
-    internal fun notifyLoadStatusChanged() = onLoadStatusChangedListener.invoke(loadStatus)
+    fun setFooterViewPadding(left: Int, top: Int, right: Int, bottom: Int) {
+        footerViewPadding.set(left, top, right, bottom)
+        internalAdapter.notifyItemChanged(internalAdapter.itemCount - 1)
+    }
+
+    internal fun setLoadStatus(status: LoadStatus, isNotify: Boolean) {
+        loadStatus = status
+        emptyView.onRecyclerViewLoadStatusChanged(status)
+        headerView.onRecyclerViewLoadStatusChanged(status)
+        footerView.onRecyclerViewLoadStatusChanged(status)
+        if (isNotify)
+            onLoadStatusChangedListener.invoke(loadStatus)
+    }
+
 
     private fun isTop() = headerView.getView().parent != null
 
     private fun isBottom() = footerView.getView().parent != null
 
     private fun isEmptyExternalAdapter() = internalAdapter.itemCount == 2
-
-    private fun autoLoadMore() {
-        if (isEnableLoadMore && loadStatus == LoadStatus.STATUS_NORMAL && isBottom() && !isEmptyExternalAdapter()) {
-            loadStatus = LoadStatus.STATUS_LOADING_MORE
-            notifyLoadStatusChanged()
-            footerView.onRecyclerViewLoadStatusChanged(loadStatus)
-        }
-    }
-
 
     private inner class InternalAdapter : RecyclerView.Adapter<ViewHolder>() {
 

@@ -25,10 +25,8 @@ class DefaultFooterView @JvmOverloads constructor(context: Context, attrs: Attri
         progressBar = findViewById(R.id.progress)
         hintView = findViewById(R.id.hint)
         findViewById<View>(R.id.contentLayout).setOnClickListener {
-            if (LoadStatus.STATUS_LOAD_FAILED == loadStatus) {
-                recyclerView.setLoadStatus(LoadStatus.STATUS_LOADING_MORE)
-                recyclerView.notifyLoadStatusChanged()
-            }
+            if (LoadStatus.STATUS_LOAD_FAILED == loadStatus)
+                recyclerView.setLoadStatus(LoadStatus.STATUS_LOADING_MORE, true)
         }
     }
 

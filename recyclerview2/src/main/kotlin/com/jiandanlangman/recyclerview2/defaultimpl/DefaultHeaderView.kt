@@ -26,18 +26,24 @@ class DefaultHeaderView @JvmOverloads constructor(context: Context, attrs: Attri
         animateHeight(viewMinHeight)
         true
     }
+
     private val onLayoutChangeListener = OnLayoutChangeListener { _, _, top, _, bottom, _, _, _, _ ->
-        onLayoutChanged(bottom - top)
+        val newHeight = bottom - top
+        if (newHeight != prevHeight) {
+            onLayoutChanged(newHeight)
+            prevHeight = newHeight
+        }
     }
 
     private val imageView: ImageView
-    private val imageViewHeight: Int
     private val hintView: TextView
+    private val heartAnimationDrawable: AnimationDrawable
 
     private lateinit var recyclerView: RecyclerView2
 
     private var canRefreshStatus = -1
     private var adapterItemCount = 0
+    private var prevHeight = -1
 
     private var loadStatus: LoadStatus? = null
     private var heightAnimator: ValueAnimator? = null
@@ -47,7 +53,9 @@ class DefaultHeaderView @JvmOverloads constructor(context: Context, attrs: Attri
     init {
         LayoutInflater.from(context).inflate(R.layout.recyclerview2_default_header_view, this, true)
         imageView = findViewById(R.id.image)
-        imageViewHeight = imageView.layoutParams.height
+        imageView.pivotX = imageView.layoutParams.width / 2f
+        imageView.pivotY = imageView.layoutParams.height.toFloat()
+        heartAnimationDrawable = imageView.drawable as AnimationDrawable
         hintView = findViewById(R.id.hint)
     }
 
@@ -67,8 +75,7 @@ class DefaultHeaderView @JvmOverloads constructor(context: Context, attrs: Attri
                 when (loadStatus) {
                     LoadStatus.STATUS_REFRESHING -> {
                         if (1 != imageView.tag) {
-                            imageView.setImageResource(R.drawable.heart_loading_anim)
-                            (imageView.drawable as AnimationDrawable).start()
+                            heartAnimationDrawable.start()
                             hintView.text = "正在刷新，请稍后..."
                             imageView.tag = 1
                         }
@@ -77,8 +84,7 @@ class DefaultHeaderView @JvmOverloads constructor(context: Context, attrs: Attri
                     }
                     LoadStatus.STATUS_NORMAL, LoadStatus.STATUS_NO_MORE_DATA -> if (prevLoadStatus == LoadStatus.STATUS_REFRESHING) { //只处理刷新带来的这两个事件, LoadMore带来的不处理
                         if (3 != imageView.tag) {
-                            (imageView.drawable as? AnimationDrawable)?.stop()
-                            imageView.setImageBitmap(null)
+                            heartAnimationDrawable.stop()
                             hintView.text = "刷新成功!"
                             imageView.tag = 3
                         }
@@ -89,8 +95,7 @@ class DefaultHeaderView @JvmOverloads constructor(context: Context, attrs: Attri
                     LoadStatus.STATUS_LOAD_FAILED -> if (prevLoadStatus == LoadStatus.STATUS_REFRESHING) { //不可能是空页面失败，但是有可能是加载更多失败的
                         adapterItemCount = recyclerView.adapter!!.itemCount
                         if (2 != imageView.tag) {
-                            (imageView.drawable as? AnimationDrawable)?.stop()
-                            imageView.setImageBitmap(null)
+                            heartAnimationDrawable.stop()
                             hintView.text = "刷新失败"
                             imageView.tag = 2
                         }
@@ -136,10 +141,9 @@ class DefaultHeaderView @JvmOverloads constructor(context: Context, attrs: Attri
     }
 
     override fun onEndPullDown() {
-        if (canRefreshStatus == 1) {
-            recyclerView.setLoadStatus(LoadStatus.STATUS_REFRESHING)
-            recyclerView.notifyLoadStatusChanged()
-        } else
+        if (canRefreshStatus == 1)
+            recyclerView.setLoadStatus(LoadStatus.STATUS_REFRESHING, true)
+        else
             animateHeight(viewMinHeight)
         canRefreshStatus = -1
     }
@@ -164,7 +168,7 @@ class DefaultHeaderView @JvmOverloads constructor(context: Context, attrs: Attri
     private fun onCanRefreshStatusChanged(canRefresh: Boolean) {
         if (canRefresh) {
             canRefreshAnimator?.cancel()
-            canRefreshAnimator = ValueAnimator.ofFloat(1f, 1.24f, 1f, 1.12f, 1f)
+            canRefreshAnimator = ValueAnimator.ofFloat(1f, 1.16f, 0.92f, 1.08f, 1f)
             canRefreshAnimator!!.duration = 600
             canRefreshAnimator!!.addUpdateListener {
                 val value = it.animatedValue as Float
@@ -179,11 +183,6 @@ class DefaultHeaderView @JvmOverloads constructor(context: Context, attrs: Attri
             imageView.scaleY = 1f
             hintView.text = "下拉刷新"
         }
-        if (0 != imageView.tag) {
-            (imageView.drawable as? AnimationDrawable)?.stop()
-            imageView.setImageResource(R.drawable.heart_loading_00000)
-            imageView.tag = 0
-        }
     }
 
 
@@ -194,15 +193,16 @@ class DefaultHeaderView @JvmOverloads constructor(context: Context, attrs: Attri
 
     override fun onDetachedFromWindow() {
         super.onDetachedFromWindow()
+        heartAnimationDrawable.stop()
         removeOnLayoutChangeListener(onLayoutChangeListener)
     }
 
     private fun onLayoutChanged(newHeight: Int) {
         if (newHeight <= canRefreshHeight) {
             val scale = newHeight.toFloat() / canRefreshHeight
+            imageView.scaleX = scale
+            imageView.scaleY = scale
             imageView.alpha = scale
-            imageView.layoutParams.height = (imageViewHeight * scale + .5f).toInt()
-            imageView.requestLayout()
         }
     }
 

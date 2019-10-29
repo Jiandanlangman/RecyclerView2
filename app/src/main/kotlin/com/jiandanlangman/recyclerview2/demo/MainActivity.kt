@@ -8,6 +8,7 @@ import android.view.View
 import android.view.ViewGroup
 import android.widget.TextView
 import android.widget.Toast
+import androidx.appcompat.app.AlertDialog
 import androidx.recyclerview.widget.GridLayoutManager
 import androidx.recyclerview.widget.RecyclerView
 import androidx.recyclerview.widget.StaggeredGridLayoutManager
@@ -51,6 +52,8 @@ class MainActivity : AppCompatActivity() {
         }
         datas.addAll(tempDatas)
         recyclerView.adapter = adapter
+//        val padding = (resources.displayMetrics.density * 48f + .5f).toInt()
+//        recyclerView.setHeaderViewPadding(0, padding, 0, padding)
 //        recyclerView.setLoadStatus(LoadStatus.STATUS_REFRESHING)
 //        recyclerView.postDelayed({
 ////            datas.addAll(tempDatas)
@@ -63,6 +66,11 @@ class MainActivity : AppCompatActivity() {
         val textView = itemView as TextView
 
         init {
+            textView.setOnLongClickListener {
+                AlertDialog.Builder(this@MainActivity).setTitle("哈ah").setMessage("打算东东大东adsa").create().show()
+//                Toast.makeText(this@MainActivity, "onItemClick", Toast.LENGTH_SHORT).show()
+                true
+            }
             textView.setOnClickListener {
                 Toast.makeText(this@MainActivity, "onItemClick", Toast.LENGTH_SHORT).show()
             }
