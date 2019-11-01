@@ -217,9 +217,14 @@ class RecyclerView2 @JvmOverloads constructor(context: Context, attrs: Attribute
     fun setLoadStatus(status: LoadStatus) {
         if (loadStatus != status) {
             setLoadStatus(status, false)
-            post {
-                if (isEnableLoadMore && loadStatus == LoadStatus.STATUS_NORMAL && isBottom() && !isEmptyExternalAdapter())
-                    setLoadStatus(LoadStatus.STATUS_LOADING_MORE, true)
+            post{
+                 if(isTop() && isEnableLoadMore && loadStatus == LoadStatus.STATUS_NORMAL) {
+                     headerView.setOnHeaderViewResetListener {
+                         headerView.setOnHeaderViewResetListener(null)
+                         if(isBottom())
+                             setLoadStatus(LoadStatus.STATUS_LOADING_MORE, true)
+                     }
+                 }
             }
         }
     }

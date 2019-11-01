@@ -1,25 +1,45 @@
 <?xml version="1.0" encoding="utf-8"?>
 <animation-list xmlns:android="http://schemas.android.com/apk/res/android" android:oneshot="false">
 
-    <item android:drawable="@drawable/loading_fell00" android:duration="80" />
-    <item android:drawable="@drawable/loading_fell01" android:duration="80" />
-    <item android:drawable="@drawable/loading_fell02" android:duration="80" />
-    <item android:drawable="@drawable/loading_fell03" android:duration="80" />
-    <item android:drawable="@drawable/loading_fell04" android:duration="80" />
-    <item android:drawable="@drawable/loading_fell05" android:duration="80" />
-    <item android:drawable="@drawable/loading_fell06" android:duration="80" />
-    <item android:drawable="@drawable/loading_fell07" android:duration="80" />
-    <item android:drawable="@drawable/loading_fell08" android:duration="80" />
-    <item android:drawable="@drawable/loading_fell09" android:duration="80" />
-    <item android:drawable="@drawable/loading_fell10" android:duration="80" />
-    <item android:drawable="@drawable/loading_fell11" android:duration="80" />
-    <item android:drawable="@drawable/loading_fell12" android:duration="80" />
-    <item android:drawable="@drawable/loading_fell13" android:duration="80" />
-    <item android:drawable="@drawable/loading_fell14" android:duration="80" />
-    <item android:drawable="@drawable/loading_fell15" android:duration="80" />
-    <item android:drawable="@drawable/loading_fell16" android:duration="80" />
-    <item android:drawable="@drawable/loading_fell17" android:duration="80" />
-    <item android:drawable="@drawable/loading_fell18" android:duration="80" />
-    <item android:drawable="@drawable/loading_fell19" android:duration="6400" />
+    <item android:drawable="@drawable/loading_fell00" android:duration="40" />
+    <item android:drawable="@drawable/loading_fell01" android:duration="40" />
+    <item android:drawable="@drawable/loading_fell02" android:duration="40" />
+    <item android:drawable="@drawable/loading_fell03" android:duration="40" />
+    <item android:drawable="@drawable/loading_fell04" android:duration="40" />
+    <item android:drawable="@drawable/loading_fell05" android:duration="40" />
+    <item android:drawable="@drawable/loading_fell06" android:duration="40" />
+    <item android:drawable="@drawable/loading_fell07" android:duration="40" />
+    <item android:drawable="@drawable/loading_fell08" android:duration="40" />
+    <item android:drawable="@drawable/loading_fell09" android:duration="40" />
+    <item android:drawable="@drawable/loading_fell10" android:duration="40" />
+    <item android:drawable="@drawable/loading_fell11" android:duration="40" />
+    <item android:drawable="@drawable/loading_fell12" android:duration="40" />
+    <item android:drawable="@drawable/loading_fell13" android:duration="40" />
+    <item android:drawable="@drawable/loading_fell14" android:duration="40" />
+    <item android:drawable="@drawable/loading_fell15" android:duration="40" />
+    <item android:drawable="@drawable/loading_fell16" android:duration="40" />
+    <item android:drawable="@drawable/loading_fell17" android:duration="40" />
+    <item android:drawable="@drawable/loading_fell18" android:duration="40" />
+    <item android:drawable="@drawable/loading_fell19" android:duration="40" />
+    <item android:drawable="@drawable/loading_fell20" android:duration="40" />
+    <item android:drawable="@drawable/loading_fell21" android:duration="40" />
+    <item android:drawable="@drawable/loading_fell22" android:duration="40" />
+    <item android:drawable="@drawable/loading_fell23" android:duration="40" />
+    <item android:drawable="@drawable/loading_fell24" android:duration="40" />
+    <item android:drawable="@drawable/loading_fell25" android:duration="40" />
+    <item android:drawable="@drawable/loading_fell26" android:duration="40" />
+    <item android:drawable="@drawable/loading_fell27" android:duration="40" />
+    <item android:drawable="@drawable/loading_fell28" android:duration="40" />
+    <item android:drawable="@drawable/loading_fell29" android:duration="40" />
+    <item android:drawable="@drawable/loading_fell30" android:duration="40" />
+    <item android:drawable="@drawable/loading_fell31" android:duration="40" />
+    <item android:drawable="@drawable/loading_fell32" android:duration="40" />
+    <item android:drawable="@drawable/loading_fell33" android:duration="40" />
+    <item android:drawable="@drawable/loading_fell34" android:duration="40" />
+    <item android:drawable="@drawable/loading_fell35" android:duration="40" />
+    <item android:drawable="@drawable/loading_fell36" android:duration="40" />
+    <item android:drawable="@drawable/loading_fell37" android:duration="40" />
+    <item android:drawable="@drawable/loading_fell38" android:duration="40" />
+    <item android:drawable="@drawable/loading_fell39" android:duration="3200" />
 
 </animation-list>

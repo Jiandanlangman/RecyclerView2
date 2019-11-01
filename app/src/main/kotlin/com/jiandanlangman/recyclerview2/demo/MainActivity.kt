@@ -1,15 +1,18 @@
 package com.jiandanlangman.recyclerview2.demo
 
 import android.annotation.SuppressLint
+import android.graphics.Rect
 import androidx.appcompat.app.AppCompatActivity
 import android.os.Bundle
 import android.view.LayoutInflater
 import android.view.View
 import android.view.ViewGroup
+import android.widget.LinearLayout
 import android.widget.TextView
 import android.widget.Toast
 import androidx.appcompat.app.AlertDialog
 import androidx.recyclerview.widget.GridLayoutManager
+import androidx.recyclerview.widget.LinearLayoutManager
 import androidx.recyclerview.widget.RecyclerView
 import androidx.recyclerview.widget.StaggeredGridLayoutManager
 import com.jiandanlangman.recyclerview2.LoadStatus
@@ -27,13 +30,24 @@ class MainActivity : AppCompatActivity() {
 
     private fun initView() {
         val tempDatas = ArrayList<String>()
-        for(i in 0 until 100)
+        for(i in 0 until 13)
             tempDatas.add("这是一条纯文本的ITEM")
         val adapter = Adapter()
 
         val recyclerView = findViewById<RecyclerView2>(R.id.recyclerView)
-        val layotManager = StaggeredGridLayoutManager(2, RecyclerView.VERTICAL)
+        val layotManager = LinearLayoutManager(this, RecyclerView.VERTICAL, false)
         recyclerView.layoutManager = layotManager
+        recyclerView.addItemDecoration(object : RecyclerView.ItemDecoration() {
+            val padding = (resources.displayMetrics.density * 12 + .5f).toInt()
+            override fun getItemOffsets(
+                outRect: Rect,
+                view: View,
+                parent: RecyclerView,
+                state: RecyclerView.State
+            ) {
+                outRect.set(padding,  padding, padding, 0)
+            }
+        })
         recyclerView.setOnLoadStatusChangedListener {
                 recyclerView.postDelayed({
                     if(it == LoadStatus.STATUS_REFRESHING) {
@@ -48,10 +62,17 @@ class MainActivity : AppCompatActivity() {
                         recyclerView.setLoadStatus(LoadStatus.STATUS_NO_MORE_DATA)
                     }
 
-                }, 200)
+                }, 2000)
         }
-        datas.addAll(tempDatas)
+//        datas.addAll(tempDatas)
         recyclerView.adapter = adapter
+        recyclerView.setLoadStatus(LoadStatus.STATUS_REFRESHING)
+        recyclerView.postDelayed({
+            datas.addAll(tempDatas)
+            adapter.notifyDataSetChanged()
+            recyclerView.setLoadStatus(LoadStatus.STATUS_NORMAL)
+        }, 1000)
+//        recyclerView.setLoadStatus(LoadStatus.STATUS_NO_MORE_DATA)
 //        val padding = (resources.displayMetrics.density * 48f + .5f).toInt()
 //        recyclerView.setHeaderViewPadding(0, padding, 0, padding)
 //        recyclerView.setLoadStatus(LoadStatus.STATUS_REFRESHING)

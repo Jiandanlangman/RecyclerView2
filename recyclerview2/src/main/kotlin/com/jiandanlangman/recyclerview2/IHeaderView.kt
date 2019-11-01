@@ -6,4 +6,6 @@ interface IHeaderView : IActionView {
 
     fun onEndPullDown()
 
+    fun setOnHeaderViewResetListener(listener:(() -> Unit)?)
+
 }

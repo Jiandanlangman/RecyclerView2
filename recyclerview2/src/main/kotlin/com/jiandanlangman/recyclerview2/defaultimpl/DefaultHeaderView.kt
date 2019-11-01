@@ -18,6 +18,7 @@ import com.jiandanlangman.recyclerview2.RecyclerView2
 
 class DefaultHeaderView @JvmOverloads constructor(context: Context, attrs: AttributeSet? = null, defStyleAttr: Int = 0) : ConstraintLayout(context, attrs, defStyleAttr), IHeaderView {
 
+
     private val canRefreshHeight = (resources.displayMetrics.density * 48 + .5f).toInt()
     private val viewMaxHeight = (resources.displayMetrics.density * 144 + .5f).toInt()
     private val showRefreshResultHeight = (resources.displayMetrics.density * 20 + .5f).toInt()
@@ -48,6 +49,7 @@ class DefaultHeaderView @JvmOverloads constructor(context: Context, attrs: Attri
     private var loadStatus: LoadStatus? = null
     private var heightAnimator: ValueAnimator? = null
     private var canRefreshAnimator: ValueAnimator? = null
+    private var onHeaderViewResetListener :(() -> Unit) ?= null
 
 
     init {
@@ -110,6 +112,9 @@ class DefaultHeaderView @JvmOverloads constructor(context: Context, attrs: Attri
         }
     }
 
+    override fun setOnHeaderViewResetListener(listener: (() -> Unit)?) {
+        onHeaderViewResetListener = listener
+    }
 
     override fun onPullingDown(dy: Float): Boolean {
         val params = layoutParams
@@ -160,6 +165,8 @@ class DefaultHeaderView @JvmOverloads constructor(context: Context, attrs: Attri
                 val animatedValue = it.animatedValue as Int
                 layoutParams.height = animatedValue
                 parent?.requestLayout()
+                if(height == viewMinHeight && animatedValue == height)
+                    onHeaderViewResetListener?.invoke()
             }
             heightAnimator!!.start()
         }
