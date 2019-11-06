@@ -164,7 +164,10 @@ class DefaultHeaderView @JvmOverloads constructor(context: Context, attrs: Attri
             heightAnimator!!.addUpdateListener {
                 val animatedValue = it.animatedValue as Int
                 layoutParams.height = animatedValue
-                parent?.requestLayout()
+                if(parent != null && parent.parent != null) {
+                    parent?.requestLayout()
+                    recyclerView.scrollToPosition(0)
+                }
                 if(height == viewMinHeight && animatedValue == height)
                     onHeaderViewResetListener?.invoke()
             }
