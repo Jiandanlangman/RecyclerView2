@@ -110,6 +110,7 @@ class RecyclerView2 @JvmOverloads constructor(context: Context, attrs: Attribute
                         isMoved = abs(dy) >= scaledTouchSlop
                     if (isMoved && headerView.onPullingDown(dy)) {
                         touchEventPrevY = y
+                        scrollToPosition(0)
                         ev.action = MotionEvent.ACTION_CANCEL
                     }
                 }
