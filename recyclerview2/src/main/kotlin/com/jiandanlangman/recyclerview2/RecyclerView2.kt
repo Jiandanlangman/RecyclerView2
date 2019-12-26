@@ -95,7 +95,8 @@ class RecyclerView2 @JvmOverloads constructor(context: Context, attrs: Attribute
             scroller.forceFinished(true)
             stopScroll()
         }
-        if (ev.action == MotionEvent.ACTION_MOVE && (isEmptyExternalAdapter() || !hasWindowFocus()))
+      //  if (ev.action == MotionEvent.ACTION_MOVE && (isEmptyExternalAdapter() || !hasWindowFocus()))
+          if (ev.action == MotionEvent.ACTION_MOVE && !hasWindowFocus())
             return true
         val y = ev.y
         if (isEnablePullToRefresh && loadStatus != LoadStatus.STATUS_REFRESHING && loadStatus != LoadStatus.STATUS_LOADING_MORE)
